@@ -23,3 +23,9 @@ access_perf_line_pm,task.management.member.performance.line.pm,model_task_manage
 access_perf_line_admin,task.management.member.performance.line.admin,model_task_management_member_performance_line,group_admin_manager,1,1,1,1
 access_perf_proj_pm,task.management.member.performance.project.pm,model_task_management_member_performance_project,group_project_manager,1,1,1,1
 access_perf_proj_admin,task.management.member.performance.project.admin,model_task_management_member_performance_project,group_admin_manager,1,1,1,1
+access_proj_report_pm,task.management.project.performance.report.pm,model_task_management_project_performance_report,group_project_manager,1,1,1,1
+access_proj_report_admin,task.management.project.performance.report.admin,model_task_management_project_performance_report,group_admin_manager,1,1,1,1
+access_proj_report_member_pm,task.management.project.performance.member.pm,model_task_management_project_performance_member,group_project_manager,1,1,1,1
+access_proj_report_member_admin,task.management.project.performance.member.admin,model_task_management_project_performance_member,group_admin_manager,1,1,1,1
+access_proj_report_task_pm,task.management.project.performance.task.pm,model_task_management_project_performance_task,group_project_manager,1,1,1,1
+access_proj_report_task_admin,task.management.project.performance.task.admin,model_task_management_project_performance_task,group_admin_manager,1,1,1,1
