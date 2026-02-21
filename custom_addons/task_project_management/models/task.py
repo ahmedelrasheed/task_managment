@@ -88,11 +88,11 @@ class TaskManagementTask(models.Model):
             return {'domain': {'project_id': [('status', 'in', ['waiting', 'active'])]}}
         if self.member_id:
             return {'domain': {'project_id': [
-                ('status', '=', 'active'),
+                ('status', 'in', ['waiting', 'active']),
                 ('member_ids', '=', self.member_id.id),
             ]}}
         return {'domain': {'project_id': [
-            ('status', '=', 'active'),
+            ('status', 'in', ['waiting', 'active']),
             ('member_ids.user_id', '=', self.env.uid),
         ]}}
 
