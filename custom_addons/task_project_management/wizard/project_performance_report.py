@@ -1,8 +1,11 @@
 import base64
 import csv
 import io
+import subprocess
+import tempfile
 
 from odoo import models, fields, api, _
+from odoo.exceptions import UserError
 from datetime import timedelta
 
 
@@ -299,6 +302,160 @@ class ProjectPerformanceReport(models.TransientModel):
         date_suffix = f'_{d_from}_{d_to}' if d_from else '_all_time'
         self.report_filename = (
             f'project_report_{proj_name}{date_suffix}.csv')
+        return {
+            'type': 'ir.actions.act_url',
+            'url': (
+                f'/web/content?model={self._name}'
+                f'&id={self.id}'
+                f'&field=report_file'
+                f'&filename_field=report_filename'
+                f'&download=true'
+            ),
+            'target': 'new',
+        }
+
+    def action_export_png(self):
+        """Export the full project report as PNG image."""
+        self.ensure_one()
+        if not self.project_id:
+            return
+
+        tasks = self._get_tasks()
+        d_from, d_to = self._get_date_range()
+        members = tasks.mapped('member_id')
+        period_str = f'{d_from} to {d_to}' if d_from else 'All Time'
+
+        # Build member breakdown rows
+        member_rows = ''
+        for member in members:
+            m_tasks = tasks.filtered(lambda t, m=member: t.member_id == m)
+            m_approved = m_tasks.filtered(
+                lambda t: t.approval_status == 'approved')
+            m_total = len(m_tasks)
+            m_total_hrs = sum(m_tasks.mapped('duration_hours'))
+            m_approved_hrs = sum(m_approved.mapped('duration_hours'))
+            m_late = m_tasks.filtered(lambda t: t.is_late_entry)
+            rate = round(
+                (len(m_approved) / m_total * 100) if m_total else 0, 1)
+            member_rows += f'''<tr>
+                <td>{member.name}</td>
+                <td>{m_total}</td>
+                <td>{m_total_hrs:.2f}</td>
+                <td>{m_approved_hrs:.2f}</td>
+                <td>{rate}%</td>
+                <td>{len(m_late)}</td>
+            </tr>'''
+
+        # Build task detail rows
+        task_rows = ''
+        total_hours = 0
+        for task in tasks:
+            status_color = {
+                'pending': '#f0ad4e',
+                'approved': '#5cb85c',
+                'rejected': '#d9534f',
+            }.get(task.approval_status, '#999')
+            task_rows += f'''<tr>
+                <td>{task.date}</td>
+                <td>{task.member_id.name}</td>
+                <td>{(task.description or "")[:60]}</td>
+                <td>{self._float_to_time(task.time_from)}</td>
+                <td>{self._float_to_time(task.time_to)}</td>
+                <td>{task.duration_hours:.2f}</td>
+                <td style="color:{status_color};font-weight:bold;">
+                    {task.approval_status.upper()}</td>
+                <td>{"Yes" if task.is_late_entry else ""}</td>
+            </tr>'''
+            total_hours += task.duration_hours
+
+        html = f'''<!DOCTYPE html>
+<html><head><meta charset="utf-8"/>
+<style>
+    body {{ font-family: Arial, sans-serif; margin: 20px; }}
+    h1 {{ color: #714B67; margin-bottom: 5px; }}
+    h2 {{ color: #714B67; margin-top: 20px; border-bottom: 2px solid #714B67;
+          padding-bottom: 5px; }}
+    .meta {{ color: #666; margin-bottom: 15px; }}
+    .kpi-grid {{ display: flex; flex-wrap: wrap; gap: 10px; margin: 15px 0; }}
+    .kpi {{ background: #f3edf2; border: 1px solid #ddd; border-radius: 8px;
+            padding: 10px 15px; text-align: center; min-width: 120px; }}
+    .kpi-value {{ font-size: 22px; font-weight: bold; color: #714B67; }}
+    .kpi-label {{ font-size: 11px; color: #666; }}
+    table {{ width: 100%; border-collapse: collapse; margin-top: 10px; }}
+    th {{ background: #714B67; color: white; padding: 8px; text-align: left; }}
+    td {{ padding: 6px 8px; border-bottom: 1px solid #ddd; }}
+    tr:nth-child(even) {{ background: #f9f9f9; }}
+    .total {{ font-weight: bold; margin-top: 10px; font-size: 14px; }}
+</style></head><body>
+    <h1>Project Report: {self.project_id.name}</h1>
+    <div class="meta">Period: {period_str} | Status: {self.project_status}</div>
+
+    <div class="kpi-grid">
+        <div class="kpi"><div class="kpi-value">{self.total_tasks}</div>
+            <div class="kpi-label">Total Tasks</div></div>
+        <div class="kpi"><div class="kpi-value" style="color:#5cb85c">
+            {self.approved_tasks}</div>
+            <div class="kpi-label">Approved</div></div>
+        <div class="kpi"><div class="kpi-value" style="color:#d9534f">
+            {self.rejected_tasks}</div>
+            <div class="kpi-label">Rejected</div></div>
+        <div class="kpi"><div class="kpi-value" style="color:#f0ad4e">
+            {self.pending_tasks}</div>
+            <div class="kpi-label">Pending</div></div>
+        <div class="kpi"><div class="kpi-value">{self.progress:.1f}%</div>
+            <div class="kpi-label">Progress</div></div>
+        <div class="kpi"><div class="kpi-value">{self.approval_rate:.1f}%</div>
+            <div class="kpi-label">Approval Rate</div></div>
+        <div class="kpi"><div class="kpi-value">{self.approved_hours:.1f}</div>
+            <div class="kpi-label">Approved Hours</div></div>
+        <div class="kpi"><div class="kpi-value" style="color:#d9534f">
+            {self.late_entries}</div>
+            <div class="kpi-label">Late Entries</div></div>
+    </div>
+
+    <h2>Member Breakdown</h2>
+    <table><thead><tr>
+        <th>Member</th><th>Tasks</th><th>Total Hours</th>
+        <th>Approved Hours</th><th>Approval Rate</th><th>Late</th>
+    </tr></thead><tbody>{member_rows}</tbody></table>
+
+    <h2>Task Details</h2>
+    <table><thead><tr>
+        <th>Date</th><th>Member</th><th>Description</th>
+        <th>From</th><th>To</th><th>Hours</th><th>Status</th><th>Late</th>
+    </tr></thead><tbody>{task_rows}</tbody></table>
+    <div class="total">Total Hours: {total_hours:.2f}</div>
+</body></html>'''
+
+        try:
+            with tempfile.NamedTemporaryFile(
+                suffix='.html', mode='w', delete=False,
+                encoding='utf-8',
+            ) as html_file:
+                html_file.write(html)
+                html_path = html_file.name
+            png_path = html_path.replace('.html', '.png')
+            result = subprocess.run(
+                ['wkhtmltoimage', '--width', '1200', html_path, png_path],
+                capture_output=True, timeout=30,
+            )
+            if result.returncode != 0:
+                raise UserError(
+                    _('Failed to generate image: %s') %
+                    result.stderr.decode())
+            with open(png_path, 'rb') as f:
+                self.report_file = base64.b64encode(f.read())
+            proj_name = self.project_id.name.replace(' ', '_')
+            d_from, d_to = self._get_date_range()
+            date_suffix = f'_{d_from}_{d_to}' if d_from else '_all_time'
+            self.report_filename = (
+                f'project_report_{proj_name}{date_suffix}.png')
+        except FileNotFoundError:
+            raise UserError(
+                _('wkhtmltoimage is not installed. '
+                  'Please install wkhtmltopdf package.'))
+        except subprocess.TimeoutExpired:
+            raise UserError(_('Image generation timed out.'))
         return {
             'type': 'ir.actions.act_url',
             'url': (

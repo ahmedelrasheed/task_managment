@@ -10,7 +10,11 @@
                 <header>
                     <button name="action_export_csv" string="Export CSV"
                             type="object" class="btn-primary"
-                            icon="fa-download"
+                            icon="fa-file-text-o"
+                            invisible="not project_id"/>
+                    <button name="action_export_png" string="Export PNG"
+                            type="object" class="btn-secondary"
+                            icon="fa-file-image-o"
                             invisible="not project_id"/>
                 </header>
                 <sheet>

@@ -95,12 +95,6 @@
               action="action_tasks_to_review"
               sequence="20"/>
 
-    <menuitem id="menu_export_report"
-              name="Export Report"
-              parent="menu_projects_parent"
-              action="action_export_report_wizard"
-              sequence="25"/>
-
     <menuitem id="menu_pm_dashboard"
               name="PM Dashboard"
               parent="menu_projects_parent"
