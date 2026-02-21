@@ -73,15 +73,11 @@ export class PMDashboard extends Component {
     }
 
     onExportCSV() {
-        this.action.doAction("task_project_management.action_export_report_wizard", {
-            additionalContext: { default_export_type: "csv" },
-        });
+        this.action.doAction("task_project_management.action_project_performance_report");
     }
 
     onExportImage() {
-        this.action.doAction("task_project_management.action_export_report_wizard", {
-            additionalContext: { default_export_type: "image" },
-        });
+        this.action.doAction("task_project_management.action_project_performance_report");
     }
 }
 
@@ -120,15 +116,11 @@ export class AdminDashboard extends Component {
     }
 
     onExportCSV() {
-        this.action.doAction("task_project_management.action_export_report_wizard", {
-            additionalContext: { default_export_type: "csv" },
-        });
+        this.action.doAction("task_project_management.action_project_performance_report");
     }
 
     onExportImage() {
-        this.action.doAction("task_project_management.action_export_report_wizard", {
-            additionalContext: { default_export_type: "image" },
-        });
+        this.action.doAction("task_project_management.action_project_performance_report");
     }
 }
 
