@@ -171,28 +171,27 @@
 .o_main_navbar .o_menu_systray {
     gap: 2px !important;
 }
-.o_main_navbar .o_menu_systray .dropdown-toggle,
-.o_main_navbar .o_menu_systray .o_nav_entry {
+.o_main_navbar .o_menu_systray > div > .dropdown-toggle,
+.o_main_navbar .o_menu_systray > div > .o_nav_entry {
     color: rgba(255,255,255,0.88) !important;
     background: transparent !important;
     border: none !important;
-    padding: 0 8px !important;
+    padding: 0 10px !important;
     height: 48px !important;
     display: flex !important;
     align-items: center !important;
-    transition: opacity 0.2s ease !important;
+    transition: color 0.2s ease, opacity 0.2s ease !important;
 }
-.o_main_navbar .o_menu_systray .dropdown-toggle:hover,
-.o_main_navbar .o_menu_systray .dropdown-toggle:focus,
-.o_main_navbar .o_menu_systray .o_nav_entry:hover,
-.o_main_navbar .o_menu_systray .o_nav_entry:focus {
+.o_main_navbar .o_menu_systray > div > .dropdown-toggle:hover,
+.o_main_navbar .o_menu_systray > div > .dropdown-toggle:focus,
+.o_main_navbar .o_menu_systray > div > .o_nav_entry:hover,
+.o_main_navbar .o_menu_systray > div > .o_nav_entry:focus {
     color: #fff !important;
     background: transparent !important;
     background-color: transparent !important;
-    opacity: 0.85 !important;
 }
 
-/* Systray dropdown panels (settings, user menu, etc.) */
+/* Systray dropdown panels (user menu, notifications, etc.) */
 .o_main_navbar .o_menu_systray .dropdown-menu {
     background: #fff !important;
     border: none !important;
@@ -200,7 +199,24 @@
     box-shadow: 0 8px 24px rgba(90, 58, 82, 0.18), 0 2px 6px rgba(0,0,0,0.08) !important;
     padding: 6px 0 !important;
     animation: navDropFade 0.15s ease !important;
+    min-width: 220px !important;
 }
+
+/* All text/spans/links inside systray dropdown panels → dark */
+.o_main_navbar .o_menu_systray .dropdown-menu,
+.o_main_navbar .o_menu_systray .dropdown-menu a,
+.o_main_navbar .o_menu_systray .dropdown-menu span,
+.o_main_navbar .o_menu_systray .dropdown-menu label,
+.o_main_navbar .o_menu_systray .dropdown-menu p,
+.o_main_navbar .o_menu_systray .dropdown-menu div,
+.o_main_navbar .o_menu_systray .dropdown-menu button {
+    color: #4a3344 !important;
+}
+.o_main_navbar .o_menu_systray .dropdown-menu i {
+    color: #714B67 !important;
+}
+
+/* Dropdown items */
 .o_main_navbar .o_menu_systray .dropdown-menu .dropdown-item {
     color: #4a3344 !important;
     font-size: 0.875rem !important;
@@ -208,12 +224,30 @@
     padding: 8px 18px !important;
     border-left: 3px solid transparent !important;
     transition: all 0.15s ease !important;
+    background: transparent !important;
 }
 .o_main_navbar .o_menu_systray .dropdown-menu .dropdown-item:hover,
 .o_main_navbar .o_menu_systray .dropdown-menu .dropdown-item:focus {
     background: #f5f0f4 !important;
     color: #714B67 !important;
     border-left-color: #714B67 !important;
+}
+.o_main_navbar .o_menu_systray .dropdown-menu .dropdown-item:hover span,
+.o_main_navbar .o_menu_systray .dropdown-menu .dropdown-item:hover a,
+.o_main_navbar .o_menu_systray .dropdown-menu .dropdown-item:focus span,
+.o_main_navbar .o_menu_systray .dropdown-menu .dropdown-item:focus a {
+    color: #714B67 !important;
+}
+
+/* Section headers inside systray dropdowns */
+.o_main_navbar .o_menu_systray .dropdown-menu .dropdown-header,
+.o_main_navbar .o_menu_systray .dropdown-menu h6,
+.o_main_navbar .o_menu_systray .dropdown-menu h5 {
+    color: #714B67 !important;
+    font-weight: 700 !important;
+    font-size: 0.78rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
 }
 
 /* Notification badges */
@@ -231,15 +265,49 @@
     text-shadow: none !important;
 }
 
-/* --- 1g. Catch-all: remaining text/icons white --- */
-.o_main_navbar a,
-.o_main_navbar button:not(.dropdown-item),
-.o_main_navbar span:not(.dropdown-item span):not(.badge),
-.o_main_navbar i {
+/* --- 1g. Navbar bar text white (NOT inside dropdown panels) --- */
+.o_main_navbar > nav > a,
+.o_main_navbar > nav > button,
+.o_main_navbar > nav > span,
+.o_main_navbar > nav > i,
+.o_main_navbar .o_navbar_apps_menu > .dropdown-toggle,
+.o_main_navbar .o_navbar_apps_menu > .dropdown-toggle i,
+.o_main_navbar .o_menu_brand,
+.o_main_navbar .o_menu_sections .o_nav_entry,
+.o_main_navbar .o_menu_sections > .dropdown > .dropdown-toggle,
+.o_main_navbar .o_menu_sections > .dropdown > .dropdown-toggle span,
+.o_main_navbar .o_menu_sections_more > .dropdown-toggle,
+.o_main_navbar .o_menu_systray > div > .dropdown-toggle,
+.o_main_navbar .o_menu_systray > div > .dropdown-toggle i,
+.o_main_navbar .o_menu_systray > div > .o_nav_entry,
+.o_main_navbar .o_menu_systray > div > .o_nav_entry i {
     color: #fff !important;
 }
-.o_main_navbar a:hover,
-.o_main_navbar button:not(.dropdown-item):hover {
+
+/* All dropdown panels text → dark (override white for menus + apps + systray) */
+.o_main_navbar .dropdown-menu a,
+.o_main_navbar .dropdown-menu span,
+.o_main_navbar .dropdown-menu button,
+.o_main_navbar .dropdown-menu label,
+.o_main_navbar .dropdown-menu p {
+    color: #4a3344 !important;
+}
+.o_main_navbar .dropdown-menu i {
+    color: #714B67 !important;
+}
+.o_main_navbar .dropdown-menu .dropdown-item:hover,
+.o_main_navbar .dropdown-menu .dropdown-item:hover a,
+.o_main_navbar .dropdown-menu .dropdown-item:hover span,
+.o_main_navbar .dropdown-menu .dropdown-item:focus,
+.o_main_navbar .dropdown-menu .dropdown-item:focus a,
+.o_main_navbar .dropdown-menu .dropdown-item:focus span {
+    color: #714B67 !important;
+}
+
+/* Prevent hover bg on navbar bar elements */
+.o_main_navbar .o_menu_brand:hover,
+.o_main_navbar .o_menu_sections .o_nav_entry:hover,
+.o_main_navbar .o_menu_systray > div > .dropdown-toggle:hover {
     background: transparent !important;
     background-color: transparent !important;
 }
@@ -387,10 +455,62 @@
 /* ============================================================
    3. STATUSBAR
    ============================================================ */
-.o_statusbar_status .o_arrow_button.disabled.o_arrow_button_current {
+
+/* All statusbar steps — base */
+.o_statusbar_status .o_arrow_button {
+    font-weight: 500 !important;
+    font-size: 0.85rem !important;
+    transition: all 0.2s ease !important;
+    border-color: #e8dce5 !important;
+}
+
+/* Current step — solid brand purple with arrow */
+.o_statusbar_status .o_arrow_button.disabled.o_arrow_button_current,
+.o_statusbar_status button.o_arrow_button_current {
     background: #714B67 !important;
+    background-color: #714B67 !important;
     color: #fff !important;
+    font-weight: 700 !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.15) !important;
+}
+/* Arrow pseudo-elements for current step */
+.o_statusbar_status .o_arrow_button.disabled.o_arrow_button_current::before,
+.o_statusbar_status button.o_arrow_button_current::before {
+    border-left-color: #714B67 !important;
+}
+.o_statusbar_status .o_arrow_button.disabled.o_arrow_button_current::after,
+.o_statusbar_status button.o_arrow_button_current::after {
+    border-left-color: #714B67 !important;
+}
+
+/* Completed (past) steps — light purple bg */
+.o_statusbar_status .o_arrow_button.disabled:not(.o_arrow_button_current) {
+    background: #f0e6ed !important;
+    background-color: #f0e6ed !important;
+    color: #714B67 !important;
+    font-weight: 500 !important;
+}
+.o_statusbar_status .o_arrow_button.disabled:not(.o_arrow_button_current)::before,
+.o_statusbar_status .o_arrow_button.disabled:not(.o_arrow_button_current)::after {
+    border-left-color: #f0e6ed !important;
+}
+
+/* Hover on clickable (future) steps */
+.o_statusbar_status .o_arrow_button:not(.disabled):hover {
+    background: #f5f0f4 !important;
+    background-color: #f5f0f4 !important;
+    color: #714B67 !important;
     font-weight: 600 !important;
+}
+.o_statusbar_status .o_arrow_button:not(.disabled):hover::before,
+.o_statusbar_status .o_arrow_button:not(.disabled):hover::after {
+    border-left-color: #f5f0f4 !important;
+}
+
+/* Statusbar inside form header */
+.o_form_view .o_form_statusbar {
+    border-bottom: 1px solid #e8dce5 !important;
+    background: #faf8f9 !important;
 }
 
 /* ============================================================
