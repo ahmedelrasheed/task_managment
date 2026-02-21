@@ -847,15 +847,7 @@ html[dir="rtl"] .task_dashboard .dashboard-header {
    13. HIDE UNWANTED SYSTRAY ICONS
    ============================================================ */
 
-/* Hide Activity Menu (clock icon) */
-.o-mail-ActivityMenu {
-    display: none !important;
-}
-
-/* Hide Switch Company Menu (building icon) */
-.o_switch_company_menu {
-    display: none !important;
-}
+/* Activity Menu and Switch Company Menu removed via JS (systray_cleanup.js) */
 
 /* ============================================================
    14. MISC

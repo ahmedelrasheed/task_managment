@@ -85,12 +85,20 @@ export class PMDashboard extends Component {
         }
     }
 
-    onExportCSV() {
-        this.action.doAction("task_project_management.action_project_performance_report");
+    async onExportCSV() {
+        const result = await this.orm.call("task.management.task", "export_pm_dashboard_csv", []);
+        const link = document.createElement("a");
+        link.href = "data:text/csv;base64," + result.file_content;
+        link.download = result.filename;
+        link.click();
     }
 
-    onExportImage() {
-        this.action.doAction("task_project_management.action_project_performance_report");
+    async onExportImage() {
+        const result = await this.orm.call("task.management.task", "export_pm_dashboard_png", []);
+        const link = document.createElement("a");
+        link.href = "data:image/png;base64," + result.file_content;
+        link.download = result.filename;
+        link.click();
     }
 }
 
@@ -131,12 +139,20 @@ export class AdminDashboard extends Component {
         }
     }
 
-    onExportCSV() {
-        this.action.doAction("task_project_management.action_project_performance_report");
+    async onExportCSV() {
+        const result = await this.orm.call("task.management.task", "export_admin_dashboard_csv", []);
+        const link = document.createElement("a");
+        link.href = "data:text/csv;base64," + result.file_content;
+        link.download = result.filename;
+        link.click();
     }
 
-    onExportImage() {
-        this.action.doAction("task_project_management.action_project_performance_report");
+    async onExportImage() {
+        const result = await this.orm.call("task.management.task", "export_admin_dashboard_png", []);
+        const link = document.createElement("a");
+        link.href = "data:image/png;base64," + result.file_content;
+        link.download = result.filename;
+        link.click();
     }
 }
 

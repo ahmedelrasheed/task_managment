@@ -1,3 +1,9 @@
+import base64
+import csv
+import io
+import subprocess
+import tempfile
+
 from odoo import models, fields, api, _
 from odoo.exceptions import ValidationError, UserError
 from markupsafe import Markup
@@ -810,3 +816,374 @@ class TaskManagementTask(models.Model):
             'totalLateEntries': total_late,
             'projects': projects_data,
         }
+
+    # ----------------------------------------------------------------
+    # Direct Dashboard Exports (CSV / PNG)
+    # ----------------------------------------------------------------
+
+    @api.model
+    def export_pm_dashboard_csv(self):
+        """Export PM dashboard data as CSV (all projects)."""
+        data = self.get_pm_dashboard_data()
+        company = self.env.company.name
+        today = fields.Date.context_today(self)
+
+        output = io.StringIO()
+        writer = csv.writer(output)
+
+        writer.writerow(['PM Dashboard Report'])
+        writer.writerow(['Company', company])
+        writer.writerow(['Generated', str(today)])
+        writer.writerow([])
+
+        for proj in data.get('projects', []):
+            writer.writerow([f'=== Project: {proj["name"]} ==='])
+            writer.writerow([
+                'Status', proj['status'],
+                'Progress', f'{proj["progress"]}%',
+                'Logged Hours', proj['logged_hours'],
+                'Pending', proj['pending_tasks'],
+                'Assigned', proj.get('assigned_tasks', 0),
+            ])
+            writer.writerow([])
+
+            # Members
+            if proj.get('members'):
+                writer.writerow(['--- Team Members ---'])
+                writer.writerow([
+                    'Member', 'Tasks', 'Hours',
+                    'Approval Rate (%)', 'Late Entries',
+                ])
+                for m in proj['members']:
+                    writer.writerow([
+                        m['name'], m['task_count'], m['hours'],
+                        f'{m["approval_rate"]}%', m['late_entries'],
+                    ])
+                writer.writerow([])
+
+            # Phases
+            if proj.get('phases'):
+                writer.writerow(['--- Phases ---'])
+                writer.writerow([
+                    'Phase', 'Weight (%)',
+                    'Completion (%)', 'Contribution (%)',
+                ])
+                for p in proj['phases']:
+                    writer.writerow([
+                        p['name'], f'{p["percentage"]:.1f}',
+                        f'{p["completion_rate"]:.1f}',
+                        f'{p["effective_progress"]:.1f}',
+                    ])
+                writer.writerow([])
+
+        csv_data = output.getvalue().encode('utf-8-sig')
+        return {
+            'file_content': base64.b64encode(csv_data).decode(),
+            'filename': f'pm_dashboard_{today}.csv',
+        }
+
+    @api.model
+    def export_pm_dashboard_png(self):
+        """Export PM dashboard as PNG image (all projects)."""
+        data = self.get_pm_dashboard_data()
+        company = self.env.company
+        today = fields.Date.context_today(self)
+
+        logo_html = ''
+        if company.logo:
+            logo_b64 = (company.logo.decode()
+                        if isinstance(company.logo, bytes)
+                        else company.logo)
+            logo_html = (
+                f'<img src="data:image/png;base64,{logo_b64}"'
+                f' style="height:50px;width:auto;"/>')
+
+        # Build project cards
+        project_cards = ''
+        for proj in data.get('projects', []):
+            status_color = {
+                'active': '#5cb85c', 'completed': '#5cb85c',
+                'waiting': '#f0ad4e', 'on_hold': '#f0ad4e',
+                'archived': '#999',
+            }.get(proj['status'], '#714B67')
+
+            # Member rows
+            member_rows = ''
+            for m in proj.get('members', []):
+                member_rows += (
+                    f'<tr><td>{m["name"]}</td>'
+                    f'<td>{m["task_count"]}</td>'
+                    f'<td>{m["hours"]}</td>'
+                    f'<td>{m["approval_rate"]}%</td>'
+                    f'<td>{m["late_entries"]}</td></tr>')
+
+            # Phase rows
+            phase_rows = ''
+            for p in proj.get('phases', []):
+                phase_rows += (
+                    f'<tr><td>{p["name"]}</td>'
+                    f'<td>{p["percentage"]:.1f}%</td>'
+                    f'<td>{p["completion_rate"]:.1f}%</td>'
+                    f'<td>{p["effective_progress"]:.1f}%</td></tr>')
+
+            phase_section = ''
+            if phase_rows:
+                phase_section = f'''
+                <h3>Phases</h3>
+                <table><thead><tr>
+                    <th>Phase</th><th>Weight</th>
+                    <th>Completion</th><th>Contribution</th>
+                </tr></thead><tbody>{phase_rows}</tbody></table>'''
+
+            member_section = ''
+            if member_rows:
+                member_section = f'''
+                <h3>Team Members</h3>
+                <table><thead><tr>
+                    <th>Member</th><th>Tasks</th><th>Hours</th>
+                    <th>Approval Rate</th><th>Late</th>
+                </tr></thead><tbody>{member_rows}</tbody></table>'''
+
+            project_cards += f'''
+            <div class="project-card">
+                <div class="project-header">
+                    <span class="project-name">{proj["name"]}</span>
+                    <span class="status-badge"
+                          style="background:{status_color}">
+                        {proj["status"].upper()}</span>
+                </div>
+                <div class="kpi-grid">
+                    <div class="kpi">
+                        <div class="kpi-value">{proj["progress"]}%</div>
+                        <div class="kpi-label">Progress</div></div>
+                    <div class="kpi">
+                        <div class="kpi-value">{proj["logged_hours"]}</div>
+                        <div class="kpi-label">Hours</div></div>
+                    <div class="kpi">
+                        <div class="kpi-value"
+                             style="color:#f0ad4e">{proj["pending_tasks"]}</div>
+                        <div class="kpi-label">Pending</div></div>
+                    <div class="kpi">
+                        <div class="kpi-value"
+                             style="color:#17a2b8">{proj.get("assigned_tasks", 0)}</div>
+                        <div class="kpi-label">Assigned</div></div>
+                </div>
+                {member_section}
+                {phase_section}
+            </div>'''
+
+        html = f'''<!DOCTYPE html>
+<html><head><meta charset="utf-8"/>
+<style>
+    body {{ font-family: Arial, sans-serif; margin: 20px; background: #fff; }}
+    .header {{ display: flex; align-items: center; gap: 15px;
+               border-bottom: 3px solid #714B67; padding-bottom: 15px;
+               margin-bottom: 20px; }}
+    .header h1 {{ color: #714B67; margin: 0; font-size: 22px; }}
+    .header p {{ color: #666; margin: 3px 0 0 0; font-size: 12px; }}
+    .project-card {{ border: 1px solid #ddd; border-radius: 10px;
+                     margin-bottom: 20px; padding: 15px;
+                     background: #fafafa; }}
+    .project-header {{ display: flex; justify-content: space-between;
+                       align-items: center; margin-bottom: 10px; }}
+    .project-name {{ font-size: 18px; font-weight: bold; color: #714B67; }}
+    .status-badge {{ color: #fff; padding: 3px 10px; border-radius: 12px;
+                     font-size: 11px; font-weight: bold; }}
+    h3 {{ color: #714B67; font-size: 14px; margin: 12px 0 6px 0;
+          border-bottom: 1px solid #714B67; padding-bottom: 4px; }}
+    .kpi-grid {{ display: flex; gap: 10px; margin: 10px 0; }}
+    .kpi {{ background: #f3edf2; border-radius: 8px;
+            padding: 8px 14px; text-align: center; min-width: 90px; }}
+    .kpi-value {{ font-size: 18px; font-weight: bold; color: #714B67; }}
+    .kpi-label {{ font-size: 9px; color: #666; text-transform: uppercase; }}
+    table {{ width: 100%; border-collapse: collapse; margin-top: 6px; }}
+    th {{ background: #714B67; color: #fff; padding: 6px 8px;
+          text-align: left; font-size: 11px; }}
+    td {{ padding: 5px 8px; border-bottom: 1px solid #ddd; font-size: 11px; }}
+    tr:nth-child(even) {{ background: #f5f0f4; }}
+    .footer {{ margin-top: 20px; padding-top: 8px; border-top: 1px solid #ddd;
+               color: #999; font-size: 10px; text-align: center; }}
+</style></head><body>
+    <div class="header">
+        {logo_html}
+        <div>
+            <h1>PM Dashboard Report</h1>
+            <p>{company.name} | Generated: {today}</p>
+        </div>
+    </div>
+    {project_cards}
+    <div class="footer">Generated by {company.name} | PM Dashboard | {today}</div>
+</body></html>'''
+
+        return self._html_to_png(html, f'pm_dashboard_{today}.png')
+
+    @api.model
+    def export_admin_dashboard_csv(self):
+        """Export Admin dashboard data as CSV (all projects)."""
+        data = self.get_admin_dashboard_data()
+        company = self.env.company.name
+        today = fields.Date.context_today(self)
+
+        output = io.StringIO()
+        writer = csv.writer(output)
+
+        writer.writerow(['Admin Dashboard Report'])
+        writer.writerow(['Company', company])
+        writer.writerow(['Generated', str(today)])
+        writer.writerow([])
+
+        writer.writerow(['--- Organization Summary ---'])
+        writer.writerow(['Total Projects', data['totalProjects']])
+        writer.writerow(['Total Members', data['totalMembers']])
+        writer.writerow(['Total Hours', data['totalHours']])
+        writer.writerow(['Late Entries', data['totalLateEntries']])
+        writer.writerow([])
+
+        writer.writerow(['--- All Projects ---'])
+        writer.writerow([
+            'Project', 'Status', 'Progress (%)', 'Tasks',
+            'Pending', 'Members', 'Late Entries',
+        ])
+        for proj in data.get('projects', []):
+            writer.writerow([
+                proj['name'], proj['status'],
+                f'{proj["progress"]}%', proj['task_count'],
+                proj['pending_tasks'], proj['member_count'],
+                proj['late_entries'],
+            ])
+
+        csv_data = output.getvalue().encode('utf-8-sig')
+        return {
+            'file_content': base64.b64encode(csv_data).decode(),
+            'filename': f'admin_dashboard_{today}.csv',
+        }
+
+    @api.model
+    def export_admin_dashboard_png(self):
+        """Export Admin dashboard as PNG image."""
+        data = self.get_admin_dashboard_data()
+        company = self.env.company
+        today = fields.Date.context_today(self)
+
+        logo_html = ''
+        if company.logo:
+            logo_b64 = (company.logo.decode()
+                        if isinstance(company.logo, bytes)
+                        else company.logo)
+            logo_html = (
+                f'<img src="data:image/png;base64,{logo_b64}"'
+                f' style="height:50px;width:auto;"/>')
+
+        # Project rows
+        project_rows = ''
+        for proj in data.get('projects', []):
+            status_color = {
+                'active': '#5cb85c', 'completed': '#5cb85c',
+                'waiting': '#f0ad4e', 'on_hold': '#f0ad4e',
+                'archived': '#999',
+            }.get(proj['status'], '#714B67')
+            project_rows += (
+                f'<tr><td>{proj["name"]}</td>'
+                f'<td style="color:{status_color};font-weight:bold;">'
+                f'{proj["status"].upper()}</td>'
+                f'<td>{proj["progress"]}%</td>'
+                f'<td>{proj["task_count"]}</td>'
+                f'<td>{proj["pending_tasks"]}</td>'
+                f'<td>{proj["member_count"]}</td>'
+                f'<td>{proj["late_entries"]}</td></tr>')
+
+        html = f'''<!DOCTYPE html>
+<html><head><meta charset="utf-8"/>
+<style>
+    body {{ font-family: Arial, sans-serif; margin: 20px; background: #fff; }}
+    .header {{ display: flex; align-items: center; gap: 15px;
+               border-bottom: 3px solid #714B67; padding-bottom: 15px;
+               margin-bottom: 20px; }}
+    .header h1 {{ color: #714B67; margin: 0; font-size: 22px; }}
+    .header p {{ color: #666; margin: 3px 0 0 0; font-size: 12px; }}
+    .kpi-grid {{ display: flex; gap: 12px; margin: 15px 0 20px 0; }}
+    .kpi {{ background: #f3edf2; border: 1px solid #ddd; border-radius: 8px;
+            padding: 12px 18px; text-align: center; min-width: 120px; }}
+    .kpi-value {{ font-size: 24px; font-weight: bold; color: #714B67; }}
+    .kpi-label {{ font-size: 10px; color: #666; text-transform: uppercase; }}
+    h2 {{ color: #714B67; font-size: 16px; margin-top: 20px;
+          border-bottom: 2px solid #714B67; padding-bottom: 5px; }}
+    table {{ width: 100%; border-collapse: collapse; margin-top: 8px; }}
+    th {{ background: #714B67; color: #fff; padding: 8px;
+          text-align: left; font-size: 12px; }}
+    td {{ padding: 6px 8px; border-bottom: 1px solid #ddd; font-size: 12px; }}
+    tr:nth-child(even) {{ background: #f5f0f4; }}
+    .footer {{ margin-top: 20px; padding-top: 8px; border-top: 1px solid #ddd;
+               color: #999; font-size: 10px; text-align: center; }}
+</style></head><body>
+    <div class="header">
+        {logo_html}
+        <div>
+            <h1>Administration Dashboard Report</h1>
+            <p>{company.name} | Generated: {today}</p>
+        </div>
+    </div>
+
+    <div class="kpi-grid">
+        <div class="kpi">
+            <div class="kpi-value">{data["totalProjects"]}</div>
+            <div class="kpi-label">Total Projects</div></div>
+        <div class="kpi">
+            <div class="kpi-value" style="color:#5cb85c">
+                {data["totalMembers"]}</div>
+            <div class="kpi-label">Total Members</div></div>
+        <div class="kpi">
+            <div class="kpi-value">{data["totalHours"]}</div>
+            <div class="kpi-label">Total Hours</div></div>
+        <div class="kpi">
+            <div class="kpi-value" style="color:#d9534f">
+                {data["totalLateEntries"]}</div>
+            <div class="kpi-label">Late Entries</div></div>
+    </div>
+
+    <h2>All Projects</h2>
+    <table><thead><tr>
+        <th>Project</th><th>Status</th><th>Progress</th>
+        <th>Tasks</th><th>Pending</th><th>Members</th><th>Late</th>
+    </tr></thead><tbody>{project_rows}</tbody></table>
+
+    <div class="footer">Generated by {company.name} | Admin Dashboard | {today}</div>
+</body></html>'''
+
+        return self._html_to_png(html, f'admin_dashboard_{today}.png')
+
+    @api.model
+    def _html_to_png(self, html_content, filename):
+        """Convert HTML to PNG using wkhtmltoimage and return base64."""
+        try:
+            with tempfile.NamedTemporaryFile(
+                suffix='.html', mode='w', delete=False,
+                encoding='utf-8',
+            ) as html_file:
+                html_file.write(html_content)
+                html_path = html_file.name
+            png_path = html_path.replace('.html', '.png')
+            result = subprocess.run(
+                ['wkhtmltoimage', '--width', '1200',
+                 html_path, png_path],
+                capture_output=True, timeout=30,
+            )
+            if result.returncode != 0:
+                raise UserError(
+                    _('Failed to generate image: %s') %
+                    result.stderr.decode())
+            with open(png_path, 'rb') as f:
+                png_data = base64.b64encode(f.read()).decode()
+            import os
+            os.unlink(html_path)
+            os.unlink(png_path)
+            return {
+                'file_content': png_data,
+                'filename': filename,
+            }
+        except FileNotFoundError:
+            raise UserError(
+                _('wkhtmltoimage is not installed. '
+                  'Please install wkhtmltopdf package.'))
+        except subprocess.TimeoutExpired:
+            raise UserError(_('Image generation timed out.'))

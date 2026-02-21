@@ -54,6 +54,7 @@
             'task_project_management/static/src/xml/form_save_override.xml',
             'task_project_management/static/src/js/dashboard.js',
             'task_project_management/static/src/js/user_menu.js',
+            'task_project_management/static/src/js/systray_cleanup.js',
         ],
     },
     'installable': True,
