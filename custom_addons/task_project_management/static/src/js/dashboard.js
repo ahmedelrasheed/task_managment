@@ -21,6 +21,10 @@ export class MemberDashboard extends Component {
             hoursToday: "0.00",
             hoursWeek: "0.00",
             hoursMonth: "0.00",
+            dailyTarget: "8.00",
+            weeklyTarget: "40.00",
+            dailyPerformance: 0,
+            weeklyPerformance: 0,
             recentTasks: [],
         });
         onWillStart(async () => {

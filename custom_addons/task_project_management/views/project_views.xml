@@ -20,12 +20,12 @@
                     </div>
                     <group>
                         <group>
-                            <field name="expected_hours"/>
+                            <field name="date_begin"/>
                             <field name="expected_end_date"/>
                         </group>
                         <group>
-                            <field name="total_logged_hours"/>
                             <field name="progress_percentage" widget="progressbar"/>
+                            <field name="total_logged_hours"/>
                             <field name="task_count"/>
                             <field name="pending_task_count"/>
                         </group>
@@ -34,6 +34,17 @@
                         <field name="description" placeholder="Project description..."/>
                     </group>
                     <notebook>
+                        <page string="Phases" name="phases">
+                            <field name="phase_ids">
+                                <tree editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name"/>
+                                    <field name="percentage"/>
+                                    <field name="completion_rate" widget="progressbar"/>
+                                    <field name="effective_progress"/>
+                                </tree>
+                            </field>
+                        </page>
                         <page string="Project Managers" name="managers">
                             <field name="project_manager_ids" widget="many2many_tags"/>
                         </page>
@@ -84,8 +95,7 @@
                        decoration-warning="status == 'on_hold'"
                        decoration-info="status == 'completed'"
                        decoration-muted="status == 'archived'"/>
-                <field name="expected_hours"/>
-                <field name="total_logged_hours"/>
+                <field name="date_begin"/>
                 <field name="progress_percentage" widget="progressbar"/>
                 <field name="expected_end_date"/>
                 <field name="pending_task_count"/>

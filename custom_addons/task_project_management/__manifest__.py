@@ -1,6 +1,6 @@
 {
     'name': 'Task & Project Management',
-    'version': '17.0.1.1.0',
+    'version': '17.0.2.0.0',
     'category': 'Project',
     'summary': 'Task & Project Management with approval workflow',
     'description': """

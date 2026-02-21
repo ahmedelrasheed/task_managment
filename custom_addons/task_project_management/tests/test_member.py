@@ -112,7 +112,6 @@ class TestMember(TransactionCase):
         })
         project = self.Project.create({
             'name': 'Test Project MEM5',
-            'expected_hours': 100,
             'project_manager_ids': [(4, pm_member.id)],
             'member_ids': [(4, member.id)],
         })
@@ -150,7 +149,6 @@ class TestMember(TransactionCase):
         })
         project = self.Project.create({
             'name': 'Test Project MEM6',
-            'expected_hours': 100,
             'project_manager_ids': [(4, pm_member.id)],
             'member_ids': [(4, member.id)],
         })
@@ -185,7 +183,6 @@ class TestMember(TransactionCase):
         })
         project = self.Project.create({
             'name': 'Test Project MEM7',
-            'expected_hours': 100,
             'project_manager_ids': [(4, pm_member.id)],
             'member_ids': [(4, member.id)],
         })

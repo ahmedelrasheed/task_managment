@@ -29,8 +29,8 @@ class ProjectPerformanceReport(models.TransientModel):
     # Project summary
     project_status = fields.Char(
         string='Status', compute='_compute_stats')
-    expected_hours = fields.Float(
-        string='Expected Hours', compute='_compute_stats')
+    phase_count = fields.Integer(
+        string='Phases', compute='_compute_stats')
     total_tasks = fields.Integer(
         string='Total Tasks', compute='_compute_stats')
     approved_tasks = fields.Integer(
@@ -61,6 +61,11 @@ class ProjectPerformanceReport(models.TransientModel):
     task_line_ids = fields.One2many(
         'task.management.project.performance.task', 'report_id',
         string='Task Details', compute='_compute_stats')
+
+    # Phase breakdown
+    phase_line_ids = fields.One2many(
+        'task.management.project.performance.phase', 'report_id',
+        string='Phase Breakdown', compute='_compute_stats')
 
     # Export
     report_file = fields.Binary(string='Report File', readonly=True)
@@ -101,10 +106,11 @@ class ProjectPerformanceReport(models.TransientModel):
     def _compute_stats(self):
         MemberLine = self.env['task.management.project.performance.member']
         TaskLine = self.env['task.management.project.performance.task']
+        PhaseLine = self.env['task.management.project.performance.phase']
         for report in self:
             if not report.project_id:
                 report.project_status = ''
-                report.expected_hours = 0
+                report.phase_count = 0
                 report.total_tasks = 0
                 report.approved_tasks = 0
                 report.rejected_tasks = 0
@@ -117,6 +123,7 @@ class ProjectPerformanceReport(models.TransientModel):
                 report.member_count = 0
                 report.member_line_ids = MemberLine
                 report.task_line_ids = TaskLine
+                report.phase_line_ids = PhaseLine
                 continue
 
             proj = report.project_id
@@ -137,7 +144,7 @@ class ProjectPerformanceReport(models.TransientModel):
             report.project_status = dict(
                 proj._fields['status'].selection).get(
                 proj.status, proj.status)
-            report.expected_hours = proj.expected_hours
+            report.phase_count = len(proj.phase_ids)
             report.total_tasks = total
             report.approved_tasks = len(approved)
             report.rejected_tasks = len(rejected)
@@ -146,9 +153,7 @@ class ProjectPerformanceReport(models.TransientModel):
             report.approved_hours = approved_hrs
             report.approval_rate = round(
                 (len(approved) / total * 100) if total else 0, 1)
-            report.progress = round(
-                (approved_hrs / proj.expected_hours * 100)
-                if proj.expected_hours else 0, 1)
+            report.progress = round(proj.progress_percentage, 1)
             report.late_entries = len(late)
 
             # Members who have tasks in this period
@@ -204,6 +209,17 @@ class ProjectPerformanceReport(models.TransientModel):
                 }))
             report.task_line_ids = task_lines
 
+            # Phase breakdown
+            phase_lines = []
+            for phase in proj.phase_ids:
+                phase_lines.append((0, 0, {
+                    'phase_name': phase.name,
+                    'percentage': phase.percentage,
+                    'completion_rate': phase.completion_rate,
+                    'effective_progress': phase.effective_progress,
+                }))
+            report.phase_line_ids = phase_lines
+
     def action_export_csv(self):
         """Export the full project report as CSV."""
         self.ensure_one()
@@ -228,7 +244,7 @@ class ProjectPerformanceReport(models.TransientModel):
 
         # Project KPIs
         writer.writerow(['--- Project Summary ---'])
-        writer.writerow(['Expected Hours', f'{self.expected_hours:.2f}'])
+        writer.writerow(['Phases', str(self.phase_count)])
         writer.writerow(['Total Tasks', self.total_tasks])
         writer.writerow(['Approved', self.approved_tasks])
         writer.writerow(['Rejected', self.rejected_tasks])
@@ -274,6 +290,18 @@ class ProjectPerformanceReport(models.TransientModel):
                     lambda t: t.approval_status == 'rejected')),
                 len(m_late),
                 f'{(m_total_hrs / unique_days if unique_days else 0):.2f}',
+            ])
+        writer.writerow([])
+
+        # Phase Breakdown
+        writer.writerow(['--- Phase Breakdown ---'])
+        writer.writerow(['Phase', 'Weight (%)', 'Completion (%)', 'Contribution (%)'])
+        for phase in self.phase_line_ids:
+            writer.writerow([
+                phase.phase_name,
+                f'{phase.percentage:.1f}',
+                f'{phase.completion_rate:.1f}',
+                f'{phase.effective_progress:.1f}',
             ])
         writer.writerow([])
 
@@ -368,6 +396,16 @@ class ProjectPerformanceReport(models.TransientModel):
             </tr>'''
             total_hours += task.duration_hours
 
+        # Build phase breakdown rows
+        phase_rows = ''
+        for phase in self.phase_line_ids:
+            phase_rows += f'''<tr>
+                <td>{phase.phase_name}</td>
+                <td>{phase.percentage:.1f}%</td>
+                <td>{phase.completion_rate:.1f}%</td>
+                <td>{phase.effective_progress:.1f}%</td>
+            </tr>'''
+
         html = f'''<!DOCTYPE html>
 <html><head><meta charset="utf-8"/>
 <style>
@@ -402,6 +440,8 @@ class ProjectPerformanceReport(models.TransientModel):
         <div class="kpi"><div class="kpi-value" style="color:#f0ad4e">
             {self.pending_tasks}</div>
             <div class="kpi-label">Pending</div></div>
+        <div class="kpi"><div class="kpi-value">{self.phase_count}</div>
+            <div class="kpi-label">Phases</div></div>
         <div class="kpi"><div class="kpi-value">{self.progress:.1f}%</div>
             <div class="kpi-label">Progress</div></div>
         <div class="kpi"><div class="kpi-value">{self.approval_rate:.1f}%</div>
@@ -418,6 +458,12 @@ class ProjectPerformanceReport(models.TransientModel):
         <th>Member</th><th>Tasks</th><th>Total Hours</th>
         <th>Approved Hours</th><th>Approval Rate</th><th>Late</th>
     </tr></thead><tbody>{member_rows}</tbody></table>
+
+    <h2>Phase Breakdown</h2>
+    <table><thead><tr>
+        <th>Phase</th><th>Weight (%)</th><th>Completion (%)</th>
+        <th>Contribution (%)</th>
+    </tr></thead><tbody>{phase_rows}</tbody></table>
 
     <h2>Task Details</h2>
     <table><thead><tr>
@@ -518,3 +564,15 @@ class ProjectPerformanceTask(models.TransientModel):
     ], string='Status')
     is_late_entry = fields.Boolean(string='Late')
     manager_comment = fields.Char(string='Comment')
+
+
+class ProjectPerformancePhase(models.TransientModel):
+    _name = 'task.management.project.performance.phase'
+    _description = 'Project Performance Report - Phase Line'
+
+    report_id = fields.Many2one(
+        'task.management.project.performance.report', string='Report')
+    phase_name = fields.Char(string='Phase')
+    percentage = fields.Float(string='Weight (%)')
+    completion_rate = fields.Float(string='Completion (%)')
+    effective_progress = fields.Float(string='Contribution (%)')

@@ -77,7 +77,6 @@ class TestApproval(TransactionCase):
 
         cls.project = cls.Project.create({
             'name': 'Approval Project',
-            'expected_hours': 200,
             'project_manager_ids': [
                 (4, cls.pm_member.id),
                 (4, cls.pm_member2.id),
@@ -88,7 +87,6 @@ class TestApproval(TransactionCase):
         # Second project where PM is a member
         cls.project_b = cls.Project.create({
             'name': 'PM Member Project',
-            'expected_hours': 100,
             'project_manager_ids': [(4, cls.pm_member2.id)],
             'member_ids': [(4, cls.pm_member.id)],
         })

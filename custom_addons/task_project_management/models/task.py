@@ -497,7 +497,10 @@ class TaskManagementTask(models.Model):
                 'totalTasks': 0, 'pendingTasks': 0,
                 'approvedTasks': 0, 'rejectedTasks': 0,
                 'hoursToday': '0.00', 'hoursWeek': '0.00',
-                'hoursMonth': '0.00', 'recentTasks': [],
+                'hoursMonth': '0.00',
+                'dailyTarget': '8.00', 'weeklyTarget': '40.00',
+                'dailyPerformance': 0, 'weeklyPerformance': 0,
+                'recentTasks': [],
             }
         tasks = self.sudo().search([('member_id', '=', member.id)])
         today = fields.Date.context_today(self)
@@ -521,6 +524,18 @@ class TaskManagementTask(models.Model):
             'status': t.approval_status,
         } for t in recent]
 
+        # Performance vs targets
+        daily_target = float(
+            self.env['ir.config_parameter'].sudo().get_param(
+                'task_project_management.daily_hours_average', '8.0'))
+        weekly_target = float(
+            self.env['ir.config_parameter'].sudo().get_param(
+                'task_project_management.weekly_hours_average', '40.0'))
+        daily_perf = round(
+            (hours_today / daily_target * 100) if daily_target else 0, 1)
+        weekly_perf = round(
+            (hours_week / weekly_target * 100) if weekly_target else 0, 1)
+
         return {
             'totalTasks': len(tasks),
             'pendingTasks': len(tasks.filtered(
@@ -532,6 +547,10 @@ class TaskManagementTask(models.Model):
             'hoursToday': f'{hours_today:.2f}',
             'hoursWeek': f'{hours_week:.2f}',
             'hoursMonth': f'{hours_month:.2f}',
+            'dailyTarget': f'{daily_target:.2f}',
+            'weeklyTarget': f'{weekly_target:.2f}',
+            'dailyPerformance': daily_perf,
+            'weeklyPerformance': weekly_perf,
             'recentTasks': recent_data,
         }
 
@@ -577,15 +596,23 @@ class TaskManagementTask(models.Model):
                     'approval_rate': rate,
                     'late_entries': late,
                 })
+            phases_data = [{
+                'id': phase.id,
+                'name': phase.name,
+                'percentage': phase.percentage,
+                'completion_rate': phase.completion_rate,
+                'effective_progress': round(phase.effective_progress, 1),
+            } for phase in proj.phase_ids]
+
             result.append({
                 'id': proj.id,
                 'name': proj.name,
                 'status': proj.status,
-                'expected_hours': proj.expected_hours,
                 'logged_hours': f'{proj.total_logged_hours:.2f}',
                 'progress': round(proj.progress_percentage, 1),
                 'pending_tasks': proj.pending_task_count,
                 'members': members_data,
+                'phases': phases_data,
             })
         return {'projects': result}
 

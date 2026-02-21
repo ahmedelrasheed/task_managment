@@ -30,7 +30,7 @@
                                            decoration-warning="status == 'on_hold'"
                                            decoration-info="status == 'completed'"
                                            decoration-muted="status == 'archived'"/>
-                                    <field name="expected_hours"/>
+                                    <field name="progress_percentage" widget="progressbar"/>
                                     <field name="total_logged_hours"/>
                                 </tree>
                             </field>
@@ -44,7 +44,7 @@
                                            decoration-warning="status == 'on_hold'"
                                            decoration-info="status == 'completed'"
                                            decoration-muted="status == 'archived'"/>
-                                    <field name="expected_hours"/>
+                                    <field name="progress_percentage" widget="progressbar"/>
                                     <field name="total_logged_hours"/>
                                 </tree>
                             </field>

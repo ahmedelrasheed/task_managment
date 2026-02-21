@@ -49,6 +49,35 @@
                             </setting>
                         </block>
                     </div>
+                    <div id="performance_target_settings">
+                        <block title="Member Performance Targets"
+                               name="performance_target_block">
+                            <setting id="daily_hours_setting"
+                                     string="Daily Hours Target"
+                                     help="Target average daily working hours for member performance">
+                                <div class="content-group">
+                                    <div class="row mt16">
+                                        <label for="task_daily_hours_average"
+                                               class="col-lg-3 o_light_label"/>
+                                        <field name="task_daily_hours_average"/>
+                                        <span class="ms-1">hours</span>
+                                    </div>
+                                </div>
+                            </setting>
+                            <setting id="weekly_hours_setting"
+                                     string="Weekly Hours Target"
+                                     help="Target average weekly working hours for member performance">
+                                <div class="content-group">
+                                    <div class="row mt16">
+                                        <label for="task_weekly_hours_average"
+                                               class="col-lg-3 o_light_label"/>
+                                        <field name="task_weekly_hours_average"/>
+                                        <span class="ms-1">hours</span>
+                                    </div>
+                                </div>
+                            </setting>
+                        </block>
+                    </div>
                 </app>
             </xpath>
         </field>

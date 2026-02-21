@@ -68,7 +68,6 @@ class TestTask(TransactionCase):
 
         cls.project = cls.Project.create({
             'name': 'Active Project',
-            'expected_hours': 200,
             'project_manager_ids': [(4, cls.pm_member.id)],
             'member_ids': [
                 (4, cls.member.id),
@@ -182,7 +181,6 @@ class TestTask(TransactionCase):
         past = date.today() - timedelta(days=5)
         project_b = self.Project.create({
             'name': 'PM Entry Project',
-            'expected_hours': 100,
             'project_manager_ids': [(4, self.pm_member.id)],
             'member_ids': [(4, self.member.id)],
         })
@@ -201,7 +199,6 @@ class TestTask(TransactionCase):
         """TASK-15: Task member must be assigned to the project."""
         other_project = self.Project.create({
             'name': 'Other Project',
-            'expected_hours': 100,
             'project_manager_ids': [(4, self.pm_member.id)],
             'member_ids': [(4, self.member2.id)],
         })
@@ -231,7 +228,6 @@ class TestTask(TransactionCase):
         """TASK-18: Time overlap is per member per day, not per project."""
         project_b = self.Project.create({
             'name': 'Second Project',
-            'expected_hours': 100,
             'project_manager_ids': [(4, self.pm_member.id)],
             'member_ids': [(4, self.member.id)],
         })

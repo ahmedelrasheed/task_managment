@@ -11,8 +11,7 @@ class TaskManagementProject(models.Model):
 
     name = fields.Char(string='Project Name', required=True, tracking=True)
     description = fields.Text(string='Description')
-    expected_hours = fields.Float(
-        string='Expected Hours', required=True, tracking=True)
+    date_begin = fields.Date(string='Begin Date', tracking=True)
     expected_end_date = fields.Date(
         string='Expected End Date', tracking=True)
     status = fields.Selection([
@@ -45,6 +44,10 @@ class TaskManagementProject(models.Model):
         'task.management.task', 'project_id',
         string='Tasks',
     )
+    phase_ids = fields.One2many(
+        'task.management.project.phase', 'project_id',
+        string='Phases',
+    )
 
     # Computed fields
     total_logged_hours = fields.Float(
@@ -73,13 +76,14 @@ class TaskManagementProject(models.Model):
             project.total_logged_hours = sum(
                 approved_tasks.mapped('duration_hours'))
 
-    @api.depends('total_logged_hours', 'expected_hours')
+    @api.depends('phase_ids.percentage', 'phase_ids.completion_rate')
     def _compute_progress_percentage(self):
         for project in self:
-            if project.expected_hours > 0:
-                project.progress_percentage = min(
-                    (project.total_logged_hours / project.expected_hours) * 100,
-                    100.0)
+            if project.phase_ids:
+                project.progress_percentage = sum(
+                    phase.percentage * phase.completion_rate / 100.0
+                    for phase in project.phase_ids
+                )
             else:
                 project.progress_percentage = 0.0
 
@@ -100,6 +104,16 @@ class TaskManagementProject(models.Model):
                 raise ValidationError(
                     _('A Project Manager cannot also be a member of the '
                       'same project: %s') % names)
+
+    @api.constrains('phase_ids')
+    def _check_phase_percentage_sum(self):
+        for project in self:
+            if project.phase_ids:
+                total = sum(project.phase_ids.mapped('percentage'))
+                if abs(total - 100.0) > 0.01:
+                    raise ValidationError(
+                        _('Phase weights must sum to 100%%. '
+                          'Current total: %.2f%%') % total)
 
     @api.constrains('project_manager_ids')
     def _check_at_least_one_pm(self):

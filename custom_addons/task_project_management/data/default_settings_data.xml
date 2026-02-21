@@ -17,4 +17,14 @@
         <field name="value">100</field>
     </record>
 
+    <record id="config_daily_hours_average" model="ir.config_parameter">
+        <field name="key">task_project_management.daily_hours_average</field>
+        <field name="value">8.0</field>
+    </record>
+
+    <record id="config_weekly_hours_average" model="ir.config_parameter">
+        <field name="key">task_project_management.weekly_hours_average</field>
+        <field name="value">40.0</field>
+    </record>
+
 </odoo>

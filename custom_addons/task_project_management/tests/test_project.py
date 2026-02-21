@@ -64,14 +64,12 @@ class TestProject(TransactionCase):
         project = self.Project.create({
             'name': 'Website Redesign',
             'description': 'Redesign the company website',
-            'expected_hours': 200,
             'expected_end_date': '2026-06-01',
             'project_manager_ids': [(4, self.pm_member.id)],
             'member_ids': [(4, self.regular_member.id)],
         })
         self.assertTrue(project.id)
         self.assertEqual(project.status, 'active')
-        self.assertEqual(project.expected_hours, 200)
         self.assertIn(self.pm_member, project.project_manager_ids)
         self.assertIn(self.regular_member, project.member_ids)
 
@@ -81,30 +79,14 @@ class TestProject(TransactionCase):
         with self.assertRaises(ValidationError):
             self.Project.create({
                 'name': 'No PM Project',
-                'expected_hours': 100,
                 'project_manager_ids': [(6, 0, [])],
             })
-
-    # --- PROJ-3: Create project without expected hours ---
-    def test_create_project_no_hours_raises(self):
-        """PROJ-3: Expected hours is required."""
-        # expected_hours is required=True so 0.0 is the default for float
-        # but not providing it at all would create it with 0.0
-        # Testing the required constraint on the field
-        project = self.Project.create({
-            'name': 'Zero Hours Project',
-            'expected_hours': 0,
-            'project_manager_ids': [(4, self.pm_member.id)],
-        })
-        # It creates but with 0 hours (float field default)
-        self.assertEqual(project.expected_hours, 0)
 
     # --- PROJ-4: Multiple PMs ---
     def test_create_project_multiple_pms(self):
         """PROJ-4: Create project with multiple PMs."""
         project = self.Project.create({
             'name': 'Multi PM Project',
-            'expected_hours': 100,
             'project_manager_ids': [
                 (4, self.pm_member.id),
                 (4, self.pm_member2.id),
@@ -121,7 +103,6 @@ class TestProject(TransactionCase):
         with self.assertRaises(ValidationError):
             self.Project.create({
                 'name': 'PM As Member',
-                'expected_hours': 100,
                 'project_manager_ids': [(4, self.pm_member.id)],
                 'member_ids': [(4, self.pm_member.id)],
             })
@@ -131,13 +112,11 @@ class TestProject(TransactionCase):
         """PROJ-6: A person can be PM of one project and member of another."""
         project_a = self.Project.create({
             'name': 'Project A',
-            'expected_hours': 100,
             'project_manager_ids': [(4, self.pm_member.id)],
             'member_ids': [(4, self.regular_member.id)],
         })
         project_b = self.Project.create({
             'name': 'Project B',
-            'expected_hours': 200,
             'project_manager_ids': [(4, self.pm_member2.id)],
             'member_ids': [(4, self.pm_member.id)],
         })
@@ -149,7 +128,6 @@ class TestProject(TransactionCase):
         """PROJ-7: Members cannot submit tasks to an On Hold project."""
         project = self.Project.create({
             'name': 'On Hold Project',
-            'expected_hours': 100,
             'project_manager_ids': [(4, self.pm_member.id)],
             'member_ids': [(4, self.regular_member.id)],
         })
@@ -169,7 +147,6 @@ class TestProject(TransactionCase):
         """PROJ-8: Only admin can submit tasks to completed project."""
         project = self.Project.create({
             'name': 'Completed Project',
-            'expected_hours': 100,
             'project_manager_ids': [(4, self.pm_member.id)],
             'member_ids': [(4, self.regular_member.id)],
         })
@@ -189,7 +166,6 @@ class TestProject(TransactionCase):
         """PROJ-9: No tasks can be submitted to archived projects."""
         project = self.Project.create({
             'name': 'Archived Project',
-            'expected_hours': 100,
             'project_manager_ids': [(4, self.pm_member.id)],
             'member_ids': [(4, self.regular_member.id)],
         })
@@ -209,7 +185,6 @@ class TestProject(TransactionCase):
         """PROJ-10: Restoring an archived project makes it visible again."""
         project = self.Project.create({
             'name': 'Restore Project',
-            'expected_hours': 100,
             'project_manager_ids': [(4, self.pm_member.id)],
             'member_ids': [(4, self.regular_member.id)],
         })
@@ -224,7 +199,6 @@ class TestProject(TransactionCase):
         triggers notification."""
         project = self.Project.create({
             'name': 'Deadline Project',
-            'expected_hours': 100,
             'expected_end_date': date.today(),
             'project_manager_ids': [(4, self.pm_member.id)],
             'member_ids': [(4, self.regular_member.id)],
@@ -244,39 +218,36 @@ class TestProject(TransactionCase):
         messages_after = len(project.message_ids)
         self.assertGreater(messages_after, messages_before)
 
-    # --- PROJ-12: Edit expected hours recalculates progress ---
-    def test_edit_expected_hours_recalculates_progress(self):
-        """PROJ-12: Editing expected hours recalculates progress."""
+    # --- PROJ-12: Phase-based progress ---
+    def test_phase_based_progress(self):
+        """Progress is computed from phases."""
         project = self.Project.create({
-            'name': 'Progress Project',
-            'expected_hours': 100,
+            'name': 'Phase Project',
             'project_manager_ids': [(4, self.pm_member.id)],
             'member_ids': [(4, self.regular_member.id)],
         })
-        # Create and approve a task (3 hours)
-        task = self.Task.create({
-            'date': date.today().isoformat(),
-            'description': 'Work done',
-            'project_id': project.id,
-            'member_id': self.regular_member.id,
-            'time_from': 9.0,
-            'time_to': 12.0,
+        Phase = self.env['task.management.project.phase']
+        Phase.create({
+            'name': 'Design', 'project_id': project.id,
+            'percentage': 30, 'completion_rate': 100,
         })
-        task.write({'approval_status': 'approved'})
+        Phase.create({
+            'name': 'Development', 'project_id': project.id,
+            'percentage': 50, 'completion_rate': 50,
+        })
+        Phase.create({
+            'name': 'Testing', 'project_id': project.id,
+            'percentage': 20, 'completion_rate': 0,
+        })
         project.invalidate_recordset()
-        self.assertAlmostEqual(project.progress_percentage, 3.0, places=1)
-
-        # Change expected hours to 50
-        project.write({'expected_hours': 50})
-        project.invalidate_recordset()
-        self.assertAlmostEqual(project.progress_percentage, 6.0, places=1)
+        # 30*100/100 + 50*50/100 + 20*0/100 = 30 + 25 + 0 = 55%
+        self.assertAlmostEqual(project.progress_percentage, 55.0, places=1)
 
     # --- PROJ-13: Edit expected end date ---
     def test_edit_expected_end_date(self):
         """PROJ-13: Editing expected end date updates it."""
         project = self.Project.create({
             'name': 'Date Project',
-            'expected_hours': 100,
             'expected_end_date': '2026-06-01',
             'project_manager_ids': [(4, self.pm_member.id)],
         })
@@ -288,13 +259,11 @@ class TestProject(TransactionCase):
         """PROJ-14: A member can be assigned to multiple projects."""
         project_a = self.Project.create({
             'name': 'Project Alpha',
-            'expected_hours': 100,
             'project_manager_ids': [(4, self.pm_member.id)],
             'member_ids': [(4, self.regular_member.id)],
         })
         project_b = self.Project.create({
             'name': 'Project Beta',
-            'expected_hours': 200,
             'project_manager_ids': [(4, self.pm_member2.id)],
             'member_ids': [(4, self.regular_member.id)],
         })
@@ -307,7 +276,6 @@ class TestProject(TransactionCase):
         """Total logged hours only counts approved tasks."""
         project = self.Project.create({
             'name': 'Hours Project',
-            'expected_hours': 100,
             'project_manager_ids': [(4, self.pm_member.id)],
             'member_ids': [(4, self.regular_member.id)],
         })
@@ -332,22 +300,21 @@ class TestProject(TransactionCase):
         # Only 3 hours from approved task, not 5 total
         self.assertAlmostEqual(project.total_logged_hours, 3.0, places=1)
 
-    def test_progress_percentage_capped_at_100(self):
-        """Progress percentage is capped at 100%."""
+    def test_progress_percentage_full(self):
+        """All phases at 100% completion equals 100% progress."""
         project = self.Project.create({
-            'name': 'Overwork Project',
-            'expected_hours': 1,
+            'name': 'Full Progress',
             'project_manager_ids': [(4, self.pm_member.id)],
             'member_ids': [(4, self.regular_member.id)],
         })
-        task = self.Task.create({
-            'date': date.today().isoformat(),
-            'description': 'Long task',
-            'project_id': project.id,
-            'member_id': self.regular_member.id,
-            'time_from': 9.0,
-            'time_to': 17.0,
+        Phase = self.env['task.management.project.phase']
+        Phase.create({
+            'name': 'Phase 1', 'project_id': project.id,
+            'percentage': 60, 'completion_rate': 100,
         })
-        task.write({'approval_status': 'approved'})
+        Phase.create({
+            'name': 'Phase 2', 'project_id': project.id,
+            'percentage': 40, 'completion_rate': 100,
+        })
         project.invalidate_recordset()
-        self.assertEqual(project.progress_percentage, 100.0)
+        self.assertAlmostEqual(project.progress_percentage, 100.0, places=1)

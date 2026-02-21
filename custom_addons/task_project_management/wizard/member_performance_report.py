@@ -44,6 +44,14 @@ class MemberPerformanceReport(models.TransientModel):
         string='Late Entries', compute='_compute_stats')
     avg_hours_per_day = fields.Float(
         string='Avg Hours/Day', compute='_compute_stats')
+    daily_target = fields.Float(
+        string='Daily Target', compute='_compute_stats')
+    weekly_target = fields.Float(
+        string='Weekly Target', compute='_compute_stats')
+    daily_performance = fields.Float(
+        string='Daily Performance (%)', compute='_compute_stats')
+    weekly_performance = fields.Float(
+        string='Weekly Performance (%)', compute='_compute_stats')
     project_count = fields.Integer(
         string='Projects Worked On', compute='_compute_stats')
 
@@ -97,6 +105,10 @@ class MemberPerformanceReport(models.TransientModel):
                 report.approval_rate = 0.0
                 report.late_entries = 0
                 report.avg_hours_per_day = 0.0
+                report.daily_target = 0.0
+                report.weekly_target = 0.0
+                report.daily_performance = 0.0
+                report.weekly_performance = 0.0
                 report.project_count = 0
                 report.task_line_ids = TaskLine
                 report.project_line_ids = ProjectLine
@@ -132,6 +144,22 @@ class MemberPerformanceReport(models.TransientModel):
             unique_days = len(set(tasks.mapped('date')))
             report.avg_hours_per_day = round(
                 report.total_hours / unique_days if unique_days else 0, 2)
+
+            # Daily / Weekly targets and performance
+            daily_tgt = float(self.env['ir.config_parameter'].sudo().get_param(
+                'task_project_management.daily_hours_average', '8.0'))
+            weekly_tgt = float(self.env['ir.config_parameter'].sudo().get_param(
+                'task_project_management.weekly_hours_average', '40.0'))
+            report.daily_target = daily_tgt
+            report.weekly_target = weekly_tgt
+
+            unique_weeks = max(1, unique_days / 5)
+            actual_daily_avg = report.total_hours / unique_days if unique_days else 0
+            actual_weekly_avg = report.total_hours / unique_weeks if unique_weeks else 0
+            report.daily_performance = round(
+                (actual_daily_avg / daily_tgt * 100) if daily_tgt else 0, 1)
+            report.weekly_performance = round(
+                (actual_weekly_avg / weekly_tgt * 100) if weekly_tgt else 0, 1)
 
             # Projects worked on
             projects = tasks.mapped('project_id')
@@ -209,6 +237,10 @@ class MemberPerformanceReport(models.TransientModel):
         writer.writerow(['Late Entries', self.late_entries])
         writer.writerow(['Avg Hours/Day', f'{self.avg_hours_per_day:.2f}'])
         writer.writerow(['Projects Worked On', self.project_count])
+        writer.writerow(['Daily Target', f'{self.daily_target:.2f}'])
+        writer.writerow(['Weekly Target', f'{self.weekly_target:.2f}'])
+        writer.writerow(['Daily Performance', f'{self.daily_performance:.1f}%'])
+        writer.writerow(['Weekly Performance', f'{self.weekly_performance:.1f}%'])
         writer.writerow([])
 
         # Project breakdown
@@ -369,6 +401,10 @@ class MemberPerformanceReport(models.TransientModel):
             <div class="kpi-label">Late Entries</div></div>
         <div class="kpi"><div class="kpi-value">{self.avg_hours_per_day:.2f}</div>
             <div class="kpi-label">Avg Hours/Day</div></div>
+        <div class="kpi"><div class="kpi-value" style="color:{'#5cb85c' if self.daily_performance >= 100 else '#f0ad4e' if self.daily_performance >= 75 else '#d9534f'}">{self.daily_performance:.1f}%</div>
+            <div class="kpi-label">Daily Performance</div></div>
+        <div class="kpi"><div class="kpi-value" style="color:{'#5cb85c' if self.weekly_performance >= 100 else '#f0ad4e' if self.weekly_performance >= 75 else '#d9534f'}">{self.weekly_performance:.1f}%</div>
+            <div class="kpi-label">Weekly Performance</div></div>
     </div>
 
     <h2>Project Breakdown</h2>

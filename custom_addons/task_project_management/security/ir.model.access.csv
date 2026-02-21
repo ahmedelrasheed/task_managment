@@ -29,3 +29,8 @@ access_proj_report_member_pm,task.management.project.performance.member.pm,model
 access_proj_report_member_admin,task.management.project.performance.member.admin,model_task_management_project_performance_member,group_admin_manager,1,1,1,1
 access_proj_report_task_pm,task.management.project.performance.task.pm,model_task_management_project_performance_task,group_project_manager,1,1,1,1
 access_proj_report_task_admin,task.management.project.performance.task.admin,model_task_management_project_performance_task,group_admin_manager,1,1,1,1
+access_phase_member,task.management.project.phase.member,model_task_management_project_phase,group_member,1,0,0,0
+access_phase_pm,task.management.project.phase.pm,model_task_management_project_phase,group_project_manager,1,1,1,1
+access_phase_admin,task.management.project.phase.admin,model_task_management_project_phase,group_admin_manager,1,1,1,1
+access_proj_report_phase_pm,task.management.project.performance.phase.pm,model_task_management_project_performance_phase,group_project_manager,1,1,1,1
+access_proj_report_phase_admin,task.management.project.performance.phase.admin,model_task_management_project_performance_phase,group_admin_manager,1,1,1,1

@@ -115,6 +115,33 @@
                         </div>
                     </div>
 
+                    <div class="row mb-3">
+                        <div class="col-md-3 text-center">
+                            <div class="border rounded p-2 bg-light">
+                                <small class="text-muted">Daily Target</small>
+                                <h4><field name="daily_target" class="d-inline"/> hrs</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="border rounded p-2 bg-light">
+                                <small class="text-muted">Weekly Target</small>
+                                <h4><field name="weekly_target" class="d-inline"/> hrs</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="border rounded p-2 bg-light">
+                                <small class="text-muted">Daily Performance</small>
+                                <h4><field name="daily_performance" class="d-inline"/>%</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="border rounded p-2 bg-light">
+                                <small class="text-muted">Weekly Performance</small>
+                                <h4><field name="weekly_performance" class="d-inline"/>%</h4>
+                            </div>
+                        </div>
+                    </div>
+
                     <notebook>
                         <page string="Project Breakdown" name="projects">
                             <field name="project_line_ids" readonly="1">

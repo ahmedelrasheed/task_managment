@@ -149,6 +149,39 @@
         <field name="groups" eval="[(4, ref('group_admin_manager'))]"/>
     </record>
 
+    <!-- === PHASE RULES (follow project visibility) === -->
+    <!-- Member: phases of assigned projects -->
+    <record id="rule_phase_member" model="ir.rule">
+        <field name="name">Phase: Member sees phases of assigned projects</field>
+        <field name="model_id" ref="model_task_management_project_phase"/>
+        <field name="domain_force">[
+            ('project_id.member_ids.user_id', '=', user.id),
+            ('project_id.status', 'in', ['active', 'on_hold', 'completed'])
+        ]</field>
+        <field name="groups" eval="[(4, ref('group_member'))]"/>
+    </record>
+
+    <!-- PM: phases of managed + member projects -->
+    <record id="rule_phase_pm" model="ir.rule">
+        <field name="name">Phase: PM sees phases of managed + member projects</field>
+        <field name="model_id" ref="model_task_management_project_phase"/>
+        <field name="domain_force">[
+            '|',
+            ('project_id.project_manager_ids.user_id', '=', user.id),
+            ('project_id.member_ids.user_id', '=', user.id),
+            ('project_id.status', '!=', 'archived')
+        ]</field>
+        <field name="groups" eval="[(4, ref('group_project_manager'))]"/>
+    </record>
+
+    <!-- Admin: all phases -->
+    <record id="rule_phase_admin" model="ir.rule">
+        <field name="name">Phase: Admin sees all</field>
+        <field name="model_id" ref="model_task_management_project_phase"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('group_admin_manager'))]"/>
+    </record>
+
     <!-- === AUDIT RULES (follow task visibility) === -->
     <!-- Member: audit for own tasks -->
     <record id="rule_audit_member" model="ir.rule">

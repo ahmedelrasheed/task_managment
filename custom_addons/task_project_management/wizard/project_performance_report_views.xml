@@ -46,9 +46,8 @@
                         </div>
                         <div class="col-md-3 text-center">
                             <div class="border rounded p-2 bg-light">
-                                <small class="text-muted">Expected Hours</small>
-                                <h4><field name="expected_hours" widget="float_time"
-                                           class="d-inline"/></h4>
+                                <small class="text-muted">Phases</small>
+                                <h4><field name="phase_count" class="d-inline"/></h4>
                             </div>
                         </div>
                         <div class="col-md-3 text-center">
@@ -151,6 +150,16 @@
                                     <field name="rejected_count" sum="Total"/>
                                     <field name="late_entries" sum="Total"/>
                                     <field name="avg_hours_per_day"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Phase Breakdown" name="phases">
+                            <field name="phase_line_ids" readonly="1">
+                                <tree>
+                                    <field name="phase_name"/>
+                                    <field name="percentage"/>
+                                    <field name="completion_rate" widget="progressbar"/>
+                                    <field name="effective_progress"/>
                                 </tree>
                             </field>
                         </page>

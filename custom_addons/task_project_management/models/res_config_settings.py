@@ -24,3 +24,15 @@ class ResConfigSettings(models.TransientModel):
         config_parameter='task_project_management.max_attachment_size',
         help='Maximum allowed file size for task attachments in megabytes.',
     )
+    task_daily_hours_average = fields.Float(
+        string='Daily Hours Target',
+        default=8.0,
+        config_parameter='task_project_management.daily_hours_average',
+        help='Target average daily working hours for member performance.',
+    )
+    task_weekly_hours_average = fields.Float(
+        string='Weekly Hours Target',
+        default=40.0,
+        config_parameter='task_project_management.weekly_hours_average',
+        help='Target average weekly working hours for member performance.',
+    )

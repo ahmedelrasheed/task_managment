@@ -77,7 +77,6 @@ class TestSecurity(TransactionCase):
         # Project managed by PM, members: member1, member2
         cls.project = cls.Project.create({
             'name': 'Security Project',
-            'expected_hours': 100,
             'project_manager_ids': [(4, cls.pm_member.id)],
             'member_ids': [
                 (4, cls.member1.id),
@@ -88,7 +87,6 @@ class TestSecurity(TransactionCase):
         # Unrelated project (PM not involved, member2 not involved)
         cls.unrelated_project = cls.Project.create({
             'name': 'Unrelated Project',
-            'expected_hours': 50,
             'project_manager_ids': [(4, cls.admin_member.id)],
             'member_ids': [(4, cls.member2.id)],
         })
@@ -133,7 +131,6 @@ class TestSecurity(TransactionCase):
         with self.assertRaises(AccessError):
             self.Project.with_user(self.user_member1).create({
                 'name': 'Member Project',
-                'expected_hours': 50,
                 'project_manager_ids': [(4, self.pm_member.id)],
             })
 
@@ -161,7 +158,6 @@ class TestSecurity(TransactionCase):
         # Create a project where PM is a member, not a manager
         project_c = self.Project.create({
             'name': 'PM As Member',
-            'expected_hours': 100,
             'project_manager_ids': [(4, self.admin_member.id)],
             'member_ids': [
                 (4, self.pm_member.id),

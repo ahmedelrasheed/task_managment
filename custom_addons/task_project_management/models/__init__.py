@@ -1,5 +1,6 @@
 from . import member
 from . import project
+from . import project_phase
 from . import task
 from . import task_audit
 from . import archive
