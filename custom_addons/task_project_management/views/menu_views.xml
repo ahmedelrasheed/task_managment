@@ -52,14 +52,15 @@
               name="My Tasks"
               parent="menu_my_tasks_parent"
               action="action_my_tasks"
-              sequence="10"/>
+              sequence="10"
+              groups="task_project_management.group_member,task_project_management.group_project_manager"/>
 
     <menuitem id="menu_team_tasks"
               name="Team Tasks"
               parent="menu_my_tasks_parent"
               action="action_team_tasks"
               sequence="15"
-              groups="task_project_management.group_project_manager,task_project_management.group_admin_manager"/>
+              groups="task_project_management.group_project_manager"/>
 
     <menuitem id="menu_all_tasks"
               name="All Tasks"
@@ -72,7 +73,8 @@
               name="My Dashboard"
               parent="menu_my_tasks_parent"
               action="action_member_dashboard"
-              sequence="20"/>
+              sequence="20"
+              groups="task_project_management.group_member,task_project_management.group_project_manager"/>
 
     <!-- ============================================================ -->
     <!-- Projects Section (PM + Admin)                                 -->
