@@ -7,6 +7,7 @@
         <field name="model">task.management.project</field>
         <field name="arch" type="xml">
             <form string="Project">
+                <field name="is_admin_user" invisible="1"/>
                 <header>
                     <field name="status" widget="statusbar"
                            statusbar_visible="active,on_hold,completed,archived"
@@ -15,7 +16,8 @@
                 <sheet>
                     <div class="oe_title">
                         <h1>
-                            <field name="name" placeholder="Project Name"/>
+                            <field name="name" placeholder="Project Name"
+                                   readonly="not is_admin_user"/>
                         </h1>
                     </div>
                     <group>
@@ -46,10 +48,12 @@
                             </field>
                         </page>
                         <page string="Project Managers" name="managers">
-                            <field name="project_manager_ids" widget="many2many_tags"/>
+                            <field name="project_manager_ids" widget="many2many_tags"
+                                   readonly="not is_admin_user"/>
                         </page>
                         <page string="Members" name="members">
-                            <field name="member_ids" widget="many2many_tags"/>
+                            <field name="member_ids" widget="many2many_tags"
+                                   readonly="not is_admin_user"/>
                         </page>
                         <page string="Removed Members" name="removed_members">
                             <field name="removed_member_ids" readonly="1">

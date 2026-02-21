@@ -3,7 +3,7 @@ access_member_member,task.management.member.member,model_task_management_member,
 access_member_pm,task.management.member.pm,model_task_management_member,group_project_manager,1,0,0,0
 access_member_admin,task.management.member.admin,model_task_management_member,group_admin_manager,1,1,1,1
 access_project_member,task.management.project.member,model_task_management_project,group_member,1,0,0,0
-access_project_pm,task.management.project.pm,model_task_management_project,group_project_manager,1,0,0,0
+access_project_pm,task.management.project.pm,model_task_management_project,group_project_manager,1,1,0,0
 access_project_admin,task.management.project.admin,model_task_management_project,group_admin_manager,1,1,1,1
 access_task_member,task.management.task.member,model_task_management_task,group_member,1,1,1,0
 access_task_pm,task.management.task.pm,model_task_management_task,group_project_manager,1,1,1,0

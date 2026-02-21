@@ -49,6 +49,11 @@ class TaskManagementProject(models.Model):
         string='Phases',
     )
 
+    # Role flag for view readonly control
+    is_admin_user = fields.Boolean(
+        compute='_compute_is_admin_user',
+    )
+
     # Computed fields
     total_logged_hours = fields.Float(
         string='Total Logged Hours',
@@ -67,6 +72,12 @@ class TaskManagementProject(models.Model):
         string='Pending Tasks',
         compute='_compute_task_stats',
     )
+
+    def _compute_is_admin_user(self):
+        is_admin = self.env.user.has_group(
+            'task_project_management.group_admin_manager')
+        for rec in self:
+            rec.is_admin_user = is_admin
 
     @api.depends('task_ids.duration_hours', 'task_ids.approval_status')
     def _compute_total_logged_hours(self):
