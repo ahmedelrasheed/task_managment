@@ -48,6 +48,7 @@
         'web.assets_backend': [
             'task_project_management/static/src/css/dashboard.css',
             'task_project_management/static/src/xml/dashboard.xml',
+            'task_project_management/static/src/xml/navbar_logo.xml',
             'task_project_management/static/src/xml/messaging_menu_override.xml',
             'task_project_management/static/src/xml/form_save_override.xml',
             'task_project_management/static/src/js/dashboard.js',

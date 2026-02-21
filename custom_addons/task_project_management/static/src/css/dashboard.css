@@ -183,6 +183,23 @@ html[dir="rtl"] .task_dashboard .dashboard-header {
     flex-direction: row-reverse;
 }
 
+/* Company Logo in Navbar */
+.o_company_logo_navbar {
+    height: 32px;
+    width: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255,255,255,0.5);
+}
+
+.o_company_logo_link {
+    text-decoration: none;
+}
+
+.o_company_logo_link:hover {
+    opacity: 0.85;
+}
+
 /* Enlarge Save manually & Discard buttons */
 .o_form_status_indicator .o_form_button_save {
     font-size: 1rem !important;
