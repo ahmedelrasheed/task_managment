@@ -52,6 +52,9 @@
                                        readonly="not can_assign or approval_status != 'assigned'"/>
                             </group>
                             <group>
+                                <field name="member_id" string="Assigned To"
+                                       readonly="approval_status != 'assigned' or not can_assign"
+                                       invisible="not assigned_by_id and approval_status != 'assigned'"/>
                                 <field name="assigned_by_id" string="Assigned By"
                                        readonly="1"
                                        invisible="not assigned_by_id"/>
@@ -73,7 +76,7 @@
                     <group>
                         <group>
                             <field name="member_id"
-                                   invisible="not is_current_user_pm"
+                                   invisible="not is_current_user_pm or assigned_by_id or approval_status == 'assigned'"
                                    readonly="not can_assign or approval_status != 'assigned'"/>
                             <field name="project_id"
                                    readonly="approval_status == 'approved'"

@@ -107,11 +107,13 @@ class TaskManagementTask(models.Model):
 
     @api.depends_context('uid')
     def _compute_can_assign(self):
-        """Only PMs can assign tasks (not Admin, not Member)."""
+        """PMs and Admins can assign tasks."""
         is_pm = self.env.user.has_group(
             'task_project_management.group_project_manager')
+        is_admin = self.env.user.has_group(
+            'task_project_management.group_admin_manager')
         for task in self:
-            task.can_assign = is_pm
+            task.can_assign = is_pm or is_admin
 
     @api.depends('member_id')
     @api.depends_context('uid')
@@ -451,12 +453,18 @@ class TaskManagementTask(models.Model):
                         vals = dict(vals, approval_status='pending')
 
             # If member edits an assigned task, submit it (assigned → pending)
+            # PM/Admin editing assignment details should NOT trigger submission
             if task.approval_status == 'assigned':
                 if 'approval_status' not in vals:
-                    submit_fields = {'date', 'time_from', 'time_to',
-                                     'description', 'attachment_ids'}
-                    if set(vals.keys()) & submit_fields:
-                        vals = dict(vals, approval_status='pending')
+                    is_pm = self.env.user.has_group(
+                        'task_project_management.group_project_manager')
+                    is_admin = self.env.user.has_group(
+                        'task_project_management.group_admin_manager')
+                    if not is_pm and not is_admin:
+                        submit_fields = {'date', 'time_from', 'time_to',
+                                         'description', 'attachment_ids'}
+                        if set(vals.keys()) & submit_fields:
+                            vals = dict(vals, approval_status='pending')
 
         result = super().write(vals)
 
