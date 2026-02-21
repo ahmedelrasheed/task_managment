@@ -200,27 +200,42 @@ html[dir="rtl"] .task_dashboard .dashboard-header {
     opacity: 0.85;
 }
 
-/* Enlarge Save manually & Discard buttons */
+/* Save & Discard buttons - Professional Theme */
 .o_form_status_indicator .o_form_button_save {
-    font-size: 1rem !important;
-    background-color: #714B67 !important;
-    border-color: #714B67 !important;
+    font-size: 0.95rem !important;
+    background: linear-gradient(135deg, #714B67 0%, #8e6584 100%) !important;
+    border: none !important;
     color: #fff !important;
-    border-radius: 6px !important;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 6px rgba(113, 75, 103, 0.35) !important;
+    transition: all 0.2s ease !important;
+    letter-spacing: 0.3px !important;
 }
 
 .o_form_status_indicator .o_form_button_save:hover {
-    background-color: #5a3a52 !important;
-    border-color: #5a3a52 !important;
+    background: linear-gradient(135deg, #5a3a52 0%, #714B67 100%) !important;
+    box-shadow: 0 4px 10px rgba(113, 75, 103, 0.45) !important;
+    transform: translateY(-1px) !important;
 }
 
 .o_form_status_indicator .o_form_button_cancel {
-    font-size: 1rem !important;
-    border-radius: 6px !important;
+    font-size: 0.95rem !important;
+    background: #fff !important;
+    color: #714B67 !important;
+    border: 1.5px solid #714B67 !important;
+    border-radius: 8px !important;
+    transition: all 0.2s ease !important;
+    letter-spacing: 0.3px !important;
+}
+
+.o_form_status_indicator .o_form_button_cancel:hover {
+    background: #f5f0f4 !important;
+    border-color: #5a3a52 !important;
+    color: #5a3a52 !important;
 }
 
 .o_form_status_indicator .o_form_status_indicator_buttons {
-    gap: 6px;
+    gap: 8px;
 }
 
 /* Hide SMS button from phone fields */
