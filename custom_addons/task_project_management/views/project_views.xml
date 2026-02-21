@@ -17,8 +17,7 @@
                 <sheet>
                     <div class="oe_title">
                         <h1>
-                            <field name="name" placeholder="Project Name"
-                                   readonly="not is_admin_user"/>
+                            <field name="name" placeholder="Project Name"/>
                         </h1>
                     </div>
                     <group>
