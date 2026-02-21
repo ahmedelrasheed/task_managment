@@ -36,13 +36,12 @@ class TestMember(TransactionCase):
     # --- MEM-1: Add member with all fields ---
     def test_create_member_all_fields(self):
         """MEM-1: Create member with all fields (name, email, phone,
-        job title, address)."""
+        job title)."""
         member = self.Member.create({
             'name': 'Ahmed Hassan',
             'email': 'ahmed@company.com',
             'phone': '0501234567',
             'job_title': 'Senior Developer',
-            'address': 'Riyadh, Saudi Arabia',
             'user_id': self.user_member.id,
         })
         self.assertTrue(member.id)
@@ -50,7 +49,6 @@ class TestMember(TransactionCase):
         self.assertEqual(member.email, 'ahmed@company.com')
         self.assertEqual(member.phone, '0501234567')
         self.assertEqual(member.job_title, 'Senior Developer')
-        self.assertEqual(member.address, 'Riyadh, Saudi Arabia')
         self.assertEqual(member.user_id, self.user_member)
 
     # --- MEM-2: Duplicate email ---

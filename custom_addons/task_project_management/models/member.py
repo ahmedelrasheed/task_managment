@@ -12,7 +12,6 @@ class TaskManagementMember(models.Model):
     email = fields.Char(string='Email', required=True, tracking=True)
     phone = fields.Char(string='Phone')
     job_title = fields.Char(string='Job Title')
-    address = fields.Text(string='Address')
     role = fields.Selection([
         ('member', 'Member'),
         ('project_manager', 'Project Manager'),

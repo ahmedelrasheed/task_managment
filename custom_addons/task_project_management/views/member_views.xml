@@ -18,7 +18,6 @@
                         <group>
                             <field name="job_title" readonly="not is_current_user_admin and id"/>
                             <field name="role" readonly="not is_current_user_admin and id"/>
-                            <field name="address" readonly="not is_current_user_admin and id"/>
                         </group>
                     </group>
                     <notebook>
