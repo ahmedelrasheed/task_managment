@@ -733,6 +733,12 @@ msgstr "مكتمل"
 #. odoo-javascript
 #: code:addons/task_project_management/static/src/xml/dashboard.xml:0
 #, python-format
+msgid "Complete"
+msgstr "مكتمل"
+
+#. odoo-javascript
+#: code:addons/task_project_management/static/src/xml/dashboard.xml:0
+#, python-format
 msgid "Completion"
 msgstr "الإنجاز"
 

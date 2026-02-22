@@ -9,9 +9,9 @@
                 <!-- Header with Logo -->
                 <div class="dashboard-header">
                     <div class="header-left">
-                        <img class="company-logo" src="/web/binary/company_logo" alt="Logo"/>
+                        <img class="company-logo" src="/web/binary/company_logo" t-att-alt="_t('Logo')"/>
                         <div>
-                            <h2 class="dashboard-title">My Dashboard</h2>
+                            <h2 class="dashboard-title"><t t-esc="_t('My Dashboard')"/></h2>
                             <p class="company-name" t-esc="state.companyName"/>
                         </div>
                     </div>
@@ -22,7 +22,7 @@
                     <div class="col">
                         <div class="card kpi-card bg-primary text-white">
                             <div class="card-body text-center">
-                                <h5 class="card-title">Total Tasks</h5>
+                                <h5 class="card-title"><t t-esc="_t('Total Tasks')"/></h5>
                                 <h2 class="kpi-value" t-esc="state.totalTasks"/>
                             </div>
                         </div>
@@ -30,7 +30,7 @@
                     <div class="col" t-if="state.assignedTasks > 0">
                         <div class="card kpi-card bg-info text-white">
                             <div class="card-body text-center">
-                                <h5 class="card-title">Assigned</h5>
+                                <h5 class="card-title"><t t-esc="_t('Assigned')"/></h5>
                                 <h2 class="kpi-value" t-esc="state.assignedTasks"/>
                             </div>
                         </div>
@@ -38,7 +38,7 @@
                     <div class="col">
                         <div class="card kpi-card bg-warning text-white">
                             <div class="card-body text-center">
-                                <h5 class="card-title">Pending</h5>
+                                <h5 class="card-title"><t t-esc="_t('Pending')"/></h5>
                                 <h2 class="kpi-value" t-esc="state.pendingTasks"/>
                             </div>
                         </div>
@@ -46,7 +46,7 @@
                     <div class="col">
                         <div class="card kpi-card bg-success text-white">
                             <div class="card-body text-center">
-                                <h5 class="card-title">Approved</h5>
+                                <h5 class="card-title"><t t-esc="_t('Approved')"/></h5>
                                 <h2 class="kpi-value" t-esc="state.approvedTasks"/>
                             </div>
                         </div>
@@ -54,7 +54,7 @@
                     <div class="col">
                         <div class="card kpi-card bg-danger text-white">
                             <div class="card-body text-center">
-                                <h5 class="card-title">Rejected</h5>
+                                <h5 class="card-title"><t t-esc="_t('Rejected')"/></h5>
                                 <h2 class="kpi-value" t-esc="state.rejectedTasks"/>
                             </div>
                         </div>
@@ -66,24 +66,24 @@
                     <div class="col-md-4">
                         <div class="card">
                             <div class="card-body text-center">
-                                <h6 class="text-muted">Today</h6>
-                                <h3 t-esc="state.hoursToday + ' hrs'"/>
+                                <h6 class="text-muted"><t t-esc="_t('Today')"/></h6>
+                                <h3><t t-esc="state.hoursToday"/> <t t-esc="_t('hrs')"/></h3>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="card">
                             <div class="card-body text-center">
-                                <h6 class="text-muted">This Week</h6>
-                                <h3 t-esc="state.hoursWeek + ' hrs'"/>
+                                <h6 class="text-muted"><t t-esc="_t('This Week')"/></h6>
+                                <h3><t t-esc="state.hoursWeek"/> <t t-esc="_t('hrs')"/></h3>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="card">
                             <div class="card-body text-center">
-                                <h6 class="text-muted">This Month</h6>
-                                <h3 t-esc="state.hoursMonth + ' hrs'"/>
+                                <h6 class="text-muted"><t t-esc="_t('This Month')"/></h6>
+                                <h3><t t-esc="state.hoursMonth"/> <t t-esc="_t('hrs')"/></h3>
                             </div>
                         </div>
                     </div>
@@ -94,12 +94,12 @@
                     <div class="col-md-4">
                         <div class="card perf-card">
                             <div class="card-body text-center">
-                                <h6 class="text-muted">Daily Performance</h6>
+                                <h6 class="text-muted"><t t-esc="_t('Daily Performance')"/></h6>
                                 <h3 t-attf-class="#{state.dailyPerformance >= 100 ? 'text-success' : state.dailyPerformance >= 75 ? 'text-warning' : 'text-danger'}">
                                     <t t-esc="state.dailyPerformance"/>%
                                 </h3>
                                 <small class="text-muted">
-                                    <t t-esc="state.hoursToday"/> / <t t-esc="state.dailyTarget"/> hrs target
+                                    <t t-esc="state.hoursToday"/> / <t t-esc="state.dailyTarget"/> <t t-esc="_t('hrs target')"/>
                                 </small>
                             </div>
                         </div>
@@ -107,12 +107,12 @@
                     <div class="col-md-4">
                         <div class="card perf-card">
                             <div class="card-body text-center">
-                                <h6 class="text-muted">Weekly Performance</h6>
+                                <h6 class="text-muted"><t t-esc="_t('Weekly Performance')"/></h6>
                                 <h3 t-attf-class="#{state.weeklyPerformance >= 100 ? 'text-success' : state.weeklyPerformance >= 75 ? 'text-warning' : 'text-danger'}">
                                     <t t-esc="state.weeklyPerformance"/>%
                                 </h3>
                                 <small class="text-muted">
-                                    <t t-esc="state.hoursWeek"/> / <t t-esc="state.weeklyTarget"/> hrs target
+                                    <t t-esc="state.hoursWeek"/> / <t t-esc="state.weeklyTarget"/> <t t-esc="_t('hrs target')"/>
                                 </small>
                             </div>
                         </div>
@@ -120,12 +120,12 @@
                     <div class="col-md-4">
                         <div class="card perf-card">
                             <div class="card-body text-center">
-                                <h6 class="text-muted">Monthly Performance</h6>
+                                <h6 class="text-muted"><t t-esc="_t('Monthly Performance')"/></h6>
                                 <h3 t-attf-class="#{state.monthlyPerformance >= 100 ? 'text-success' : state.monthlyPerformance >= 75 ? 'text-warning' : 'text-danger'}">
                                     <t t-esc="state.monthlyPerformance"/>%
                                 </h3>
                                 <small class="text-muted">
-                                    <t t-esc="state.hoursMonth"/> / <t t-esc="state.monthlyTarget"/> hrs target
+                                    <t t-esc="state.hoursMonth"/> / <t t-esc="state.monthlyTarget"/> <t t-esc="_t('hrs target')"/>
                                 </small>
                             </div>
                         </div>
@@ -137,17 +137,17 @@
                     <div class="col-12">
                         <div class="card">
                             <div class="card-header">
-                                <h5>Recent Tasks</h5>
+                                <h5><t t-esc="_t('Recent Tasks')"/></h5>
                             </div>
                             <div class="card-body p-0">
                                 <table class="table table-striped mb-0">
                                     <thead>
                                         <tr>
-                                            <th>Date</th>
-                                            <th>Project</th>
-                                            <th>Description</th>
-                                            <th>Hours</th>
-                                            <th>Status</th>
+                                            <th><t t-esc="_t('Date')"/></th>
+                                            <th><t t-esc="_t('Project')"/></th>
+                                            <th><t t-esc="_t('Description')"/></th>
+                                            <th><t t-esc="_t('Hours')"/></th>
+                                            <th><t t-esc="_t('Status')"/></th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -181,9 +181,9 @@
                 <!-- Header with Logo -->
                 <div class="dashboard-header">
                     <div class="header-left">
-                        <img class="company-logo" src="/web/binary/company_logo" alt="Logo"/>
+                        <img class="company-logo" src="/web/binary/company_logo" t-att-alt="_t('Logo')"/>
                         <div>
-                            <h2 class="dashboard-title">Project Manager Dashboard</h2>
+                            <h2 class="dashboard-title"><t t-esc="_t('Project Manager Dashboard')"/></h2>
                             <p class="company-name" t-esc="state.companyName"/>
                         </div>
                     </div>
@@ -198,7 +198,7 @@
                         </button>
                         <button class="btn btn-outline-light"
                                 t-on-click="onExportImage">
-                            <i class="fa fa-image"/> Image
+                            <i class="fa fa-image"/> <t t-esc="_t('Image')"/>
                         </button>
                     </div>
                 </div>
@@ -208,8 +208,8 @@
                     <div class="card mb-3">
                         <div class="card-body text-center text-muted py-5">
                             <i class="fa fa-folder-open-o fa-3x mb-3 d-block"/>
-                            <h5>No projects found</h5>
-                            <p>Projects you manage will appear here.</p>
+                            <h5><t t-esc="_t('No projects found')"/></h5>
+                            <p><t t-esc="_t('Projects you manage will appear here.')"/></p>
                         </div>
                     </div>
                 </t>
@@ -231,30 +231,30 @@
                                              t-attf-style="width: #{project.progress}%"
                                              t-att-aria-valuenow="project.progress"
                                              aria-valuemin="0" aria-valuemax="100">
-                                            <t t-esc="project.progress"/>% Complete
+                                            <t t-esc="project.progress"/>% <t t-esc="_t('Complete')"/>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-md-4 text-end">
                                     <span class="text-muted me-3" t-if="project.assigned_tasks">
-                                        Assigned: <strong class="text-info" t-esc="project.assigned_tasks"/>
+                                        <t t-esc="_t('Assigned:')"/> <strong class="text-info" t-esc="project.assigned_tasks"/>
                                     </span>
                                     <span class="text-muted">
-                                        Pending: <strong t-esc="project.pending_tasks"/>
+                                        <t t-esc="_t('Pending:')"/> <strong t-esc="project.pending_tasks"/>
                                     </span>
                                 </div>
                             </div>
 
                             <!-- Phase Breakdown -->
                             <t t-if="project.phases and project.phases.length">
-                                <h6 class="section-title mt-3">Phases</h6>
+                                <h6 class="section-title mt-3"><t t-esc="_t('Phases')"/></h6>
                                 <table class="table table-sm table-bordered mb-3">
                                     <thead>
                                         <tr>
-                                            <th>Phase</th>
-                                            <th>Weight</th>
-                                            <th>Completion</th>
-                                            <th>Contribution</th>
+                                            <th><t t-esc="_t('Phase')"/></th>
+                                            <th><t t-esc="_t('Weight')"/></th>
+                                            <th><t t-esc="_t('Completion')"/></th>
+                                            <th><t t-esc="_t('Contribution')"/></th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -278,15 +278,15 @@
                             </t>
 
                             <!-- Member Activity Table -->
-                            <h6 class="section-title mt-3">Team Members</h6>
+                            <h6 class="section-title mt-3"><t t-esc="_t('Team Members')"/></h6>
                             <table class="table table-sm">
                                 <thead>
                                     <tr>
-                                        <th>Member</th>
-                                        <th>Tasks</th>
-                                        <th>Hours</th>
-                                        <th>Approval Rate</th>
-                                        <th>Late Entries</th>
+                                        <th><t t-esc="_t('Member')"/></th>
+                                        <th><t t-esc="_t('Tasks')"/></th>
+                                        <th><t t-esc="_t('Hours')"/></th>
+                                        <th><t t-esc="_t('Approval Rate')"/></th>
+                                        <th><t t-esc="_t('Late Entries')"/></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -324,9 +324,9 @@
                 <!-- Header with Logo -->
                 <div class="dashboard-header">
                     <div class="header-left">
-                        <img class="company-logo" src="/web/binary/company_logo" alt="Logo"/>
+                        <img class="company-logo" src="/web/binary/company_logo" t-att-alt="_t('Logo')"/>
                         <div>
-                            <h2 class="dashboard-title">Administration Dashboard</h2>
+                            <h2 class="dashboard-title"><t t-esc="_t('Administration Dashboard')"/></h2>
                             <p class="company-name" t-esc="state.companyName"/>
                         </div>
                     </div>
@@ -341,7 +341,7 @@
                         </button>
                         <button class="btn btn-outline-light"
                                 t-on-click="onExportImage">
-                            <i class="fa fa-image"/> Image
+                            <i class="fa fa-image"/> <t t-esc="_t('Image')"/>
                         </button>
                     </div>
                 </div>
@@ -351,7 +351,7 @@
                     <div class="col-md-3">
                         <div class="card kpi-card border-primary">
                             <div class="card-body text-center">
-                                <h6 class="text-muted">Total Projects</h6>
+                                <h6 class="text-muted"><t t-esc="_t('Total Projects')"/></h6>
                                 <h2 class="text-primary" t-esc="state.totalProjects"/>
                             </div>
                         </div>
@@ -359,7 +359,7 @@
                     <div class="col-md-3">
                         <div class="card kpi-card border-success">
                             <div class="card-body text-center">
-                                <h6 class="text-muted">Total Members</h6>
+                                <h6 class="text-muted"><t t-esc="_t('Total Members')"/></h6>
                                 <h2 class="text-success" t-esc="state.totalMembers"/>
                             </div>
                         </div>
@@ -367,7 +367,7 @@
                     <div class="col-md-3">
                         <div class="card kpi-card border-info">
                             <div class="card-body text-center">
-                                <h6 class="text-muted">Total Hours</h6>
+                                <h6 class="text-muted"><t t-esc="_t('Total Hours')"/></h6>
                                 <h2 class="text-info" t-esc="state.totalHours"/>
                             </div>
                         </div>
@@ -375,7 +375,7 @@
                     <div class="col-md-3">
                         <div class="card kpi-card border-danger">
                             <div class="card-body text-center">
-                                <h6 class="text-muted">Late Entries</h6>
+                                <h6 class="text-muted"><t t-esc="_t('Late Entries')"/></h6>
                                 <h2 class="text-danger" t-esc="state.totalLateEntries"/>
                             </div>
                         </div>
@@ -387,26 +387,26 @@
                     <div class="col-12">
                         <div class="card">
                             <div class="card-header">
-                                <h5>All Projects</h5>
+                                <h5><t t-esc="_t('All Projects')"/></h5>
                             </div>
                             <div class="card-body p-0">
                                 <table class="table table-striped mb-0">
                                     <thead>
                                         <tr>
-                                            <th>Project</th>
-                                            <th>Status</th>
-                                            <th>Progress</th>
-                                            <th>Tasks</th>
-                                            <th>Pending</th>
-                                            <th>Members</th>
-                                            <th>Late Entries</th>
+                                            <th><t t-esc="_t('Project')"/></th>
+                                            <th><t t-esc="_t('Status')"/></th>
+                                            <th><t t-esc="_t('Progress')"/></th>
+                                            <th><t t-esc="_t('Tasks')"/></th>
+                                            <th><t t-esc="_t('Pending')"/></th>
+                                            <th><t t-esc="_t('Members')"/></th>
+                                            <th><t t-esc="_t('Late Entries')"/></th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <t t-if="!state.projects.length">
                                             <tr>
                                                 <td colspan="7" class="text-center text-muted py-4">
-                                                    No projects found. Create a project to see data here.
+                                                    <t t-esc="_t('No projects found. Create a project to see data here.')"/>
                                                 </td>
                                             </tr>
                                         </t>

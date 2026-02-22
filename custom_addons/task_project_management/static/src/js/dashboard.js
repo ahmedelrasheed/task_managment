@@ -4,6 +4,7 @@ import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 import { Component, useState, onWillStart } from "@odoo/owl";
 import { Layout } from "@web/search/layout";
+import { _t } from "@web/core/l10n/translation";
 
 // ============================================================
 // Member Dashboard
@@ -13,6 +14,7 @@ export class MemberDashboard extends Component {
     static components = { Layout };
 
     setup() {
+        this._t = _t;
         this.orm = useService("orm");
         this.action = useService("action");
         this.display = { controlPanel: {} };
@@ -63,6 +65,7 @@ export class PMDashboard extends Component {
     static components = { Layout };
 
     setup() {
+        this._t = _t;
         this.orm = useService("orm");
         this.action = useService("action");
         this.display = { controlPanel: {} };
@@ -123,6 +126,7 @@ export class AdminDashboard extends Component {
     static components = { Layout };
 
     setup() {
+        this._t = _t;
         this.orm = useService("orm");
         this.action = useService("action");
         this.display = { controlPanel: {} };

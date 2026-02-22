@@ -159,21 +159,32 @@
               parent="menu_my_tasks_parent"
               action="action_tasks_to_review"
               sequence="30"
-              groups="task_project_management.group_project_manager,task_project_management.group_admin_manager"/>
+              groups="task_project_management.group_project_manager"/>
 
     <menuitem id="menu_assign_task"
               name="Assign Task"
               parent="menu_my_tasks_parent"
               action="action_assign_task"
               sequence="40"
-              groups="task_project_management.group_project_manager,task_project_management.group_admin_manager"/>
+              groups="task_project_management.group_project_manager"/>
 
     <menuitem id="menu_assigned_tasks"
               name="Assigned Tasks"
               parent="menu_my_tasks_parent"
               action="action_assigned_tasks"
               sequence="50"
-              groups="task_project_management.group_project_manager,task_project_management.group_admin_manager"/>
+              groups="task_project_management.group_project_manager"/>
+
+    <!-- Force-remove Admin group from assignment menus (PM-only) -->
+    <record id="menu_tasks_to_review" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('group_project_manager')])]"/>
+    </record>
+    <record id="menu_assign_task" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('group_project_manager')])]"/>
+    </record>
+    <record id="menu_assigned_tasks" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('group_project_manager')])]"/>
+    </record>
 
     <menuitem id="menu_team_tasks"
               name="Team Tasks"
