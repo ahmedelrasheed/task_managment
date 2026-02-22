@@ -377,6 +377,27 @@ class TaskManagementTask(models.Model):
 
     # --- CRUD Overrides ---
 
+    @api.model
+    def default_get(self, fields_list):
+        """Include context-dependent computed booleans in defaults so the
+        web client has the correct values when opening a new form.  These
+        fields only depend on ``uid`` (via @api.depends_context), which
+        means the standard onchange mechanism never triggers their
+        recomputation for new records."""
+        defaults = super().default_get(fields_list)
+        is_pm = (
+            self.env.user.has_group(
+                'task_project_management.group_project_manager') or
+            self.env.user.has_group(
+                'task_project_management.group_admin_manager'))
+        if 'is_current_user_pm' in fields_list:
+            defaults['is_current_user_pm'] = is_pm
+        if 'can_assign' in fields_list:
+            defaults['can_assign'] = is_pm
+        if 'is_current_user_member' in fields_list:
+            defaults['is_current_user_member'] = False
+        return defaults
+
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
