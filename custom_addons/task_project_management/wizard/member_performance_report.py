@@ -245,72 +245,99 @@ class MemberPerformanceReport(models.TransientModel):
 
         output = io.StringIO()
         writer = csv.writer(output)
+        company = self.env.company.name
 
-        # Summary header
-        writer.writerow(['Member Performance Report'])
-        writer.writerow(['Member', self.member_id.name])
-        writer.writerow(['Period', f'{d_from} to {d_to}'])
+        # ── Report Header ──
+        writer.writerow(['MEMBER PERFORMANCE REPORT'])
+        writer.writerow([])
+        writer.writerow(['Company:', company])
+        writer.writerow(['Member:', self.member_id.name])
+        writer.writerow(['Period:', f'{d_from}  to  {d_to}'])
         writer.writerow([])
 
-        # KPI summary
-        writer.writerow(['--- Performance Summary ---'])
-        writer.writerow(['Total Tasks', self.total_tasks])
-        writer.writerow(['Approved', self.approved_tasks])
-        writer.writerow(['Rejected', self.rejected_tasks])
-        writer.writerow(['Pending', self.pending_tasks])
-        writer.writerow(['Total Hours', f'{self.total_hours:.2f}'])
-        writer.writerow(['Approved Hours', f'{self.approved_hours:.2f}'])
-        writer.writerow(['Approval Rate', f'{self.approval_rate:.1f}%'])
-        writer.writerow(['Late Entries', self.late_entries])
-        writer.writerow(['Avg Hours/Day', f'{self.avg_hours_per_day:.2f}'])
-        writer.writerow(['Projects Worked On', self.project_count])
-        writer.writerow(['Daily Target', f'{self.daily_target:.2f}'])
-        writer.writerow(['Weekly Target', f'{self.weekly_target:.2f}'])
-        writer.writerow(['Daily Performance', f'{self.daily_performance:.1f}%'])
-        writer.writerow(['Weekly Performance', f'{self.weekly_performance:.1f}%'])
-        writer.writerow(['Monthly Target', f'{self.monthly_target:.2f}'])
-        writer.writerow(['Monthly Performance', f'{self.monthly_performance:.1f}%'])
+        # ── Performance Summary ──
+        writer.writerow(['PERFORMANCE SUMMARY'])
+        writer.writerow([])
+        writer.writerow(['', 'Metric', 'Value'])
+        writer.writerow(['', 'Total Tasks', self.total_tasks])
+        writer.writerow(['', 'Approved', self.approved_tasks])
+        writer.writerow(['', 'Rejected', self.rejected_tasks])
+        writer.writerow(['', 'Pending', self.pending_tasks])
+        writer.writerow(['', 'Total Hours', f'{self.total_hours:.2f}'])
+        writer.writerow(['', 'Approved Hours', f'{self.approved_hours:.2f}'])
+        writer.writerow(['', 'Approval Rate', f'{self.approval_rate:.1f}%'])
+        writer.writerow(['', 'Late Entries', self.late_entries])
+        writer.writerow(['', 'Avg Hours/Day', f'{self.avg_hours_per_day:.2f}'])
+        writer.writerow(['', 'Projects Worked On', self.project_count])
         writer.writerow([])
 
-        # Project breakdown
-        writer.writerow(['--- Project Breakdown ---'])
-        writer.writerow([
-            'Project', 'Tasks', 'Total Hours', 'Approved Hours',
-            'Approval Rate', 'Late Entries',
-        ])
+        # ── Target vs Actual ──
+        writer.writerow(['TARGET vs ACTUAL'])
+        writer.writerow([])
+        writer.writerow(['', 'Period', 'Target (hrs)', 'Actual (hrs)',
+                          'Performance'])
+        writer.writerow(['', 'Daily', f'{self.daily_target:.2f}',
+                          '', f'{self.daily_performance:.1f}%'])
+        writer.writerow(['', 'Weekly', f'{self.weekly_target:.2f}',
+                          '', f'{self.weekly_performance:.1f}%'])
+        writer.writerow(['', 'Monthly', f'{self.monthly_target:.2f}',
+                          '', f'{self.monthly_performance:.1f}%'])
+        writer.writerow([])
+
+        # ── Project Breakdown ──
+        writer.writerow(['PROJECT BREAKDOWN'])
+        writer.writerow([])
+        writer.writerow(['', 'No.', 'Project', 'Tasks', 'Total Hours',
+                          'Approved Hours', 'Approval Rate', 'Late Entries'])
         projects = tasks.mapped('project_id')
-        for proj in projects:
+        grand_tasks = 0
+        grand_hours = 0.0
+        grand_approved_hrs = 0.0
+        grand_late = 0
+        for pi, proj in enumerate(projects, 1):
             p_tasks = tasks.filtered(lambda t, p=proj: t.project_id == p)
             p_approved = p_tasks.filtered(
                 lambda t: t.approval_status == 'approved')
             p_total = len(p_tasks)
+            p_hrs = sum(p_tasks.mapped('duration_hours'))
+            p_app_hrs = sum(p_approved.mapped('duration_hours'))
+            p_late = len(p_tasks.filtered(lambda t: t.is_late_entry))
             writer.writerow([
-                proj.name,
-                p_total,
-                f'{sum(p_tasks.mapped("duration_hours")):.2f}',
-                f'{sum(p_approved.mapped("duration_hours")):.2f}',
+                '', pi, proj.name, p_total,
+                f'{p_hrs:.2f}', f'{p_app_hrs:.2f}',
                 f'{round((len(p_approved) / p_total * 100) if p_total else 0, 1)}%',
-                len(p_tasks.filtered(lambda t: t.is_late_entry)),
+                p_late,
             ])
+            grand_tasks += p_total
+            grand_hours += p_hrs
+            grand_approved_hrs += p_app_hrs
+            grand_late += p_late
+        writer.writerow(['', '', 'TOTAL', grand_tasks,
+                          f'{grand_hours:.2f}', f'{grand_approved_hrs:.2f}',
+                          '', grand_late])
         writer.writerow([])
 
-        # Task details
-        writer.writerow(['--- Task Details ---'])
-        writer.writerow([
-            'Date', 'Project', 'Description', 'From', 'To',
-            'Hours', 'Status', 'Late Entry',
-        ])
-        for task in tasks:
+        # ── Task Details ──
+        writer.writerow(['TASK DETAILS'])
+        writer.writerow([])
+        writer.writerow(['', 'No.', 'Date', 'Project', 'Description',
+                          'From', 'To', 'Hours', 'Status', 'Late'])
+        total_hrs = 0.0
+        for i, task in enumerate(tasks, 1):
             writer.writerow([
-                str(task.date),
-                task.project_id.name,
+                '', i, str(task.date), task.project_id.name,
                 (task.description or '')[:80],
                 self._float_to_time(task.time_from),
                 self._float_to_time(task.time_to),
                 f'{task.duration_hours:.2f}',
-                task.approval_status,
-                'Yes' if task.is_late_entry else 'No',
+                task.approval_status.replace('_', ' ').title(),
+                'Yes' if task.is_late_entry else '',
             ])
+            total_hrs += task.duration_hours
+        writer.writerow(['', '', '', '', 'TOTAL', '', '',
+                          f'{total_hrs:.2f}', '', ''])
+        writer.writerow([])
+        writer.writerow(['END OF REPORT'])
 
         csv_data = output.getvalue().encode('utf-8-sig')
         self.report_file = base64.b64encode(csv_data)

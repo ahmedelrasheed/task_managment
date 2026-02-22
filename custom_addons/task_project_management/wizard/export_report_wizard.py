@@ -46,13 +46,53 @@ class ExportReportWizard(models.TransientModel):
     def _export_csv(self, tasks):
         output = io.StringIO()
         writer = csv.writer(output)
+        company = self.env.company.name
+
+        # ── Report Header ──
+        writer.writerow(['TASK REPORT'])
+        writer.writerow([])
+        writer.writerow(['Company:', company])
+        writer.writerow(['Period:', f'{self.date_from}  to  {self.date_to}'])
+        if self.project_id:
+            writer.writerow(['Project:', self.project_id.name])
+        if self.member_id:
+            writer.writerow(['Member:', self.member_id.name])
+        writer.writerow(['Total Tasks:', len(tasks)])
+        total_hours = sum(tasks.mapped('duration_hours'))
+        writer.writerow(['Total Hours:', f'{total_hours:.2f}'])
+        writer.writerow([])
+
+        # ── Summary by Status ──
+        approved = tasks.filtered(lambda t: t.approval_status == 'approved')
+        pending = tasks.filtered(lambda t: t.approval_status == 'pending')
+        rejected = tasks.filtered(lambda t: t.approval_status == 'rejected')
+        assigned = tasks.filtered(lambda t: t.approval_status == 'assigned')
+        late = tasks.filtered(lambda t: t.is_late_entry)
+        writer.writerow(['STATUS SUMMARY'])
+        writer.writerow([])
+        writer.writerow(['', 'Status', 'Count', 'Hours'])
+        writer.writerow(['', 'Approved', len(approved),
+                          f'{sum(approved.mapped("duration_hours")):.2f}'])
+        writer.writerow(['', 'Pending', len(pending),
+                          f'{sum(pending.mapped("duration_hours")):.2f}'])
+        writer.writerow(['', 'Rejected', len(rejected),
+                          f'{sum(rejected.mapped("duration_hours")):.2f}'])
+        if assigned:
+            writer.writerow(['', 'Assigned', len(assigned),
+                              f'{sum(assigned.mapped("duration_hours")):.2f}'])
+        writer.writerow(['', 'Late Entries', len(late), ''])
+        writer.writerow([])
+
+        # ── Task Details ──
+        writer.writerow(['TASK DETAILS'])
+        writer.writerow([])
         writer.writerow([
-            'Date', 'Project', 'Member', 'Description',
-            'Time From', 'Time To', 'Duration (Hours)',
-            'Status', 'Late Entry', 'Manager Comment',
+            'No.', 'Date', 'Project', 'Member', 'Description',
+            'From', 'To', 'Hours', 'Status', 'Late', 'Manager Comment',
         ])
-        for task in tasks:
+        for i, task in enumerate(tasks, 1):
             writer.writerow([
+                i,
                 str(task.date),
                 task.project_id.name,
                 task.member_id.name,
@@ -60,10 +100,16 @@ class ExportReportWizard(models.TransientModel):
                 self._float_to_time(task.time_from),
                 self._float_to_time(task.time_to),
                 f'{task.duration_hours:.2f}',
-                task.approval_status,
-                'Yes' if task.is_late_entry else 'No',
+                task.approval_status.replace('_', ' ').title(),
+                'Yes' if task.is_late_entry else '',
                 task.manager_comment or '',
             ])
+        writer.writerow([])
+        writer.writerow(
+            ['', '', '', '', 'TOTAL', '', '', f'{total_hours:.2f}',
+             '', '', ''])
+        writer.writerow([])
+        writer.writerow(['END OF REPORT'])
 
         csv_data = output.getvalue().encode('utf-8-sig')
         self.report_file = base64.b64encode(csv_data)

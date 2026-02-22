@@ -687,9 +687,14 @@
    ============================================================ */
 .task_dashboard {
     background: linear-gradient(135deg, #f5f0f4 0%, #f8f9fa 100%);
-    min-height: 100vh;
-    overflow-y: auto;
-    max-height: 100vh;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    height: 100% !important;
+}
+
+/* Ensure Odoo action manager allows dashboard scrolling */
+.o_action_manager > .task_dashboard {
+    overflow-y: auto !important;
 }
 
 /* Dashboard Header with Logo */

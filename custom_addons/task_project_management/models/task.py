@@ -851,54 +851,72 @@ class TaskManagementTask(models.Model):
         data = self.get_pm_dashboard_data()
         company = self.env.company.name
         today = fields.Date.context_today(self)
+        SEP = [''] * 7  # blank separator row
 
         output = io.StringIO()
         writer = csv.writer(output)
 
-        writer.writerow(['PM Dashboard Report'])
-        writer.writerow(['Company', company])
-        writer.writerow(['Generated', str(today)])
+        # ── Report Header ──
+        writer.writerow(['PROJECT MANAGER DASHBOARD REPORT'])
         writer.writerow([])
+        writer.writerow(['Company:', company])
+        writer.writerow(['Report Date:', str(today)])
+        writer.writerow(['Total Projects:', len(data.get('projects', []))])
+        writer.writerow(SEP)
 
-        for proj in data.get('projects', []):
-            writer.writerow([f'=== Project: {proj["name"]} ==='])
-            writer.writerow([
-                'Status', proj['status'],
-                'Progress', f'{proj["progress"]}%',
-                'Logged Hours', proj['logged_hours'],
-                'Pending', proj['pending_tasks'],
-                'Assigned', proj.get('assigned_tasks', 0),
-            ])
+        projects = data.get('projects', [])
+        for idx, proj in enumerate(projects, 1):
+            # ── Project Header ──
+            writer.writerow([f'PROJECT {idx}: {proj["name"].upper()}'])
+            writer.writerow([])
+            writer.writerow(
+                ['', 'Status', 'Progress', 'Logged Hours',
+                 'Pending Tasks', 'Assigned Tasks'])
+            writer.writerow(
+                ['', proj['status'].replace('_', ' ').title(),
+                 f'{proj["progress"]}%', proj['logged_hours'],
+                 proj['pending_tasks'], proj.get('assigned_tasks', 0)])
             writer.writerow([])
 
-            # Members
+            # ── Team Members ──
             if proj.get('members'):
-                writer.writerow(['--- Team Members ---'])
-                writer.writerow([
-                    'Member', 'Tasks', 'Hours',
-                    'Approval Rate (%)', 'Late Entries',
-                ])
-                for m in proj['members']:
-                    writer.writerow([
-                        m['name'], m['task_count'], m['hours'],
-                        f'{m["approval_rate"]}%', m['late_entries'],
-                    ])
+                writer.writerow(['', 'TEAM MEMBERS'])
+                writer.writerow(
+                    ['', 'No.', 'Member', 'Tasks', 'Hours',
+                     'Approval Rate', 'Late Entries'])
+                for mi, m in enumerate(proj['members'], 1):
+                    writer.writerow(
+                        ['', mi, m['name'], m['task_count'], m['hours'],
+                         f'{m["approval_rate"]}%', m['late_entries']])
+                total_tasks = sum(m['task_count'] for m in proj['members'])
+                total_hours = sum(
+                    float(m['hours']) for m in proj['members'])
+                total_late = sum(m['late_entries'] for m in proj['members'])
+                writer.writerow(
+                    ['', '', 'TOTAL', total_tasks, f'{total_hours:.2f}',
+                     '', total_late])
                 writer.writerow([])
 
-            # Phases
+            # ── Phases ──
             if proj.get('phases'):
-                writer.writerow(['--- Phases ---'])
-                writer.writerow([
-                    'Phase', 'Weight (%)',
-                    'Completion (%)', 'Contribution (%)',
-                ])
-                for p in proj['phases']:
-                    writer.writerow([
-                        p['name'], f'{p["percentage"]:.1f}',
-                        f'{p["completion_rate"]:.1f}',
-                        f'{p["effective_progress"]:.1f}',
-                    ])
+                writer.writerow(['', 'PROJECT PHASES'])
+                writer.writerow(
+                    ['', 'No.', 'Phase', 'Weight',
+                     'Completion', 'Contribution'])
+                for pi, p in enumerate(proj['phases'], 1):
+                    writer.writerow(
+                        ['', pi, p['name'], f'{p["percentage"]:.1f}%',
+                         f'{p["completion_rate"]:.1f}%',
+                         f'{p["effective_progress"]:.1f}%'])
                 writer.writerow([])
+
+            if idx < len(projects):
+                writer.writerow(['_' * 60])
+                writer.writerow([])
+
+        # ── Footer ──
+        writer.writerow(SEP)
+        writer.writerow(['END OF REPORT'])
 
         csv_data = output.getvalue().encode('utf-8-sig')
         return {
@@ -1051,30 +1069,54 @@ class TaskManagementTask(models.Model):
         output = io.StringIO()
         writer = csv.writer(output)
 
-        writer.writerow(['Admin Dashboard Report'])
-        writer.writerow(['Company', company])
-        writer.writerow(['Generated', str(today)])
+        # ── Report Header ──
+        writer.writerow(['ADMINISTRATION DASHBOARD REPORT'])
+        writer.writerow([])
+        writer.writerow(['Company:', company])
+        writer.writerow(['Report Date:', str(today)])
         writer.writerow([])
 
-        writer.writerow(['--- Organization Summary ---'])
-        writer.writerow(['Total Projects', data['totalProjects']])
-        writer.writerow(['Total Members', data['totalMembers']])
-        writer.writerow(['Total Hours', data['totalHours']])
-        writer.writerow(['Late Entries', data['totalLateEntries']])
+        # ── Organization Summary ──
+        writer.writerow(['ORGANIZATION SUMMARY'])
+        writer.writerow([])
+        writer.writerow(['', 'Metric', 'Value'])
+        writer.writerow(['', 'Total Projects', data['totalProjects']])
+        writer.writerow(['', 'Total Members', data['totalMembers']])
+        writer.writerow(['', 'Total Logged Hours', data['totalHours']])
+        writer.writerow(['', 'Total Late Entries', data['totalLateEntries']])
         writer.writerow([])
 
-        writer.writerow(['--- All Projects ---'])
-        writer.writerow([
-            'Project', 'Status', 'Progress (%)', 'Tasks',
-            'Pending', 'Members', 'Late Entries',
-        ])
-        for proj in data.get('projects', []):
+        # ── All Projects ──
+        writer.writerow(['ALL PROJECTS'])
+        writer.writerow([])
+        writer.writerow(
+            ['No.', 'Project', 'Status', 'Progress',
+             'Tasks', 'Pending', 'Members', 'Late Entries'])
+        total_tasks = 0
+        total_pending = 0
+        total_late = 0
+        for i, proj in enumerate(data.get('projects', []), 1):
             writer.writerow([
-                proj['name'], proj['status'],
-                f'{proj["progress"]}%', proj['task_count'],
-                proj['pending_tasks'], proj['member_count'],
+                i,
+                proj['name'],
+                proj['status'].replace('_', ' ').title(),
+                f'{proj["progress"]}%',
+                proj['task_count'],
+                proj['pending_tasks'],
+                proj['member_count'],
                 proj['late_entries'],
             ])
+            total_tasks += proj['task_count']
+            total_pending += proj['pending_tasks']
+            total_late += proj['late_entries']
+        writer.writerow([])
+        writer.writerow(
+            ['', 'TOTAL', '', '',
+             total_tasks, total_pending, '', total_late])
+        writer.writerow([])
+
+        # ── Footer ──
+        writer.writerow(['END OF REPORT'])
 
         csv_data = output.getvalue().encode('utf-8-sig')
         return {

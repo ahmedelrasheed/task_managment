@@ -232,39 +232,51 @@ class ProjectPerformanceReport(models.TransientModel):
 
         output = io.StringIO()
         writer = csv.writer(output)
+        company = self.env.company.name
+        period_str = (f'{d_from}  to  {d_to}' if d_from else 'All Time')
 
-        # Project header
-        writer.writerow(['Project Performance Report'])
-        writer.writerow(['Project', self.project_id.name])
-        writer.writerow(['Status', self.project_status])
-        period_str = (f'{d_from} to {d_to}' if d_from
-                      else 'All Time')
-        writer.writerow(['Period', period_str])
+        # ── Report Header ──
+        writer.writerow(['PROJECT PERFORMANCE REPORT'])
+        writer.writerow([])
+        writer.writerow(['Company:', company])
+        writer.writerow(['Project:', self.project_id.name])
+        writer.writerow(['Status:', self.project_status.replace(
+            '_', ' ').title()])
+        writer.writerow(['Period:', period_str])
         writer.writerow([])
 
-        # Project KPIs
-        writer.writerow(['--- Project Summary ---'])
-        writer.writerow(['Phases', str(self.phase_count)])
-        writer.writerow(['Total Tasks', self.total_tasks])
-        writer.writerow(['Approved', self.approved_tasks])
-        writer.writerow(['Rejected', self.rejected_tasks])
-        writer.writerow(['Pending', self.pending_tasks])
-        writer.writerow(['Total Hours', f'{self.total_hours:.2f}'])
-        writer.writerow(['Approved Hours', f'{self.approved_hours:.2f}'])
-        writer.writerow(['Approval Rate', f'{self.approval_rate:.1f}%'])
-        writer.writerow(['Progress', f'{self.progress:.1f}%'])
-        writer.writerow(['Late Entries', self.late_entries])
-        writer.writerow(['Active Members', self.member_count])
+        # ── Project Summary ──
+        writer.writerow(['PROJECT SUMMARY'])
+        writer.writerow([])
+        writer.writerow(['', 'Metric', 'Value'])
+        writer.writerow(['', 'Phases', self.phase_count])
+        writer.writerow(['', 'Total Tasks', self.total_tasks])
+        writer.writerow(['', 'Approved', self.approved_tasks])
+        writer.writerow(['', 'Rejected', self.rejected_tasks])
+        writer.writerow(['', 'Pending', self.pending_tasks])
+        writer.writerow(['', 'Total Hours', f'{self.total_hours:.2f}'])
+        writer.writerow(['', 'Approved Hours',
+                          f'{self.approved_hours:.2f}'])
+        writer.writerow(['', 'Approval Rate',
+                          f'{self.approval_rate:.1f}%'])
+        writer.writerow(['', 'Progress', f'{self.progress:.1f}%'])
+        writer.writerow(['', 'Late Entries', self.late_entries])
+        writer.writerow(['', 'Active Members', self.member_count])
         writer.writerow([])
 
-        # Member breakdown
-        writer.writerow(['--- Member Breakdown ---'])
+        # ── Member Breakdown ──
+        writer.writerow(['MEMBER BREAKDOWN'])
+        writer.writerow([])
         writer.writerow([
-            'Member', 'Role', 'Tasks', 'Total Hours', 'Approved Hours',
-            'Approval Rate', 'Pending', 'Rejected', 'Late Entries',
-            'Avg Hours/Day',
+            '', 'No.', 'Member', 'Role', 'Tasks', 'Total Hours',
+            'Approved Hours', 'Approval Rate', 'Pending', 'Rejected',
+            'Late Entries', 'Avg Hours/Day',
         ])
-        for member in members:
+        g_tasks = 0
+        g_hrs = 0.0
+        g_app_hrs = 0.0
+        g_late = 0
+        for mi, member in enumerate(members, 1):
             m_tasks = tasks.filtered(
                 lambda t, m=member: t.member_id == m)
             m_approved = m_tasks.filtered(
@@ -278,11 +290,8 @@ class ProjectPerformanceReport(models.TransientModel):
                 member._fields['role'].selection).get(
                 member.role, member.role)
             writer.writerow([
-                member.name,
-                role_label,
-                m_total,
-                f'{m_total_hrs:.2f}',
-                f'{m_approved_hrs:.2f}',
+                '', mi, member.name, role_label, m_total,
+                f'{m_total_hrs:.2f}', f'{m_approved_hrs:.2f}',
                 f'{round((len(m_approved) / m_total * 100) if m_total else 0, 1)}%',
                 len(m_tasks.filtered(
                     lambda t: t.approval_status == 'pending')),
@@ -291,38 +300,54 @@ class ProjectPerformanceReport(models.TransientModel):
                 len(m_late),
                 f'{(m_total_hrs / unique_days if unique_days else 0):.2f}',
             ])
+            g_tasks += m_total
+            g_hrs += m_total_hrs
+            g_app_hrs += m_approved_hrs
+            g_late += len(m_late)
+        writer.writerow(['', '', 'TOTAL', '', g_tasks,
+                          f'{g_hrs:.2f}', f'{g_app_hrs:.2f}',
+                          '', '', '', g_late, ''])
         writer.writerow([])
 
-        # Phase Breakdown
-        writer.writerow(['--- Phase Breakdown ---'])
-        writer.writerow(['Phase', 'Weight (%)', 'Completion (%)', 'Contribution (%)'])
-        for phase in self.phase_line_ids:
-            writer.writerow([
-                phase.phase_name,
-                f'{phase.percentage:.1f}',
-                f'{phase.completion_rate:.1f}',
-                f'{phase.effective_progress:.1f}',
-            ])
-        writer.writerow([])
+        # ── Phase Breakdown ──
+        if self.phase_line_ids:
+            writer.writerow(['PHASE BREAKDOWN'])
+            writer.writerow([])
+            writer.writerow(['', 'No.', 'Phase', 'Weight',
+                              'Completion', 'Contribution'])
+            for pi, phase in enumerate(self.phase_line_ids, 1):
+                writer.writerow([
+                    '', pi, phase.phase_name,
+                    f'{phase.percentage:.1f}%',
+                    f'{phase.completion_rate:.1f}%',
+                    f'{phase.effective_progress:.1f}%',
+                ])
+            writer.writerow([])
 
-        # Task details
-        writer.writerow(['--- All Tasks ---'])
+        # ── Task Details ──
+        writer.writerow(['ALL TASKS'])
+        writer.writerow([])
         writer.writerow([
-            'Date', 'Member', 'Description', 'From', 'To',
+            '', 'No.', 'Date', 'Member', 'Description', 'From', 'To',
             'Hours', 'Status', 'Late', 'Manager Comment',
         ])
-        for task in tasks:
+        total_hrs = 0.0
+        for i, task in enumerate(tasks, 1):
             writer.writerow([
-                str(task.date),
-                task.member_id.name,
+                '', i, str(task.date), task.member_id.name,
                 (task.description or '')[:80],
                 self._float_to_time(task.time_from),
                 self._float_to_time(task.time_to),
                 f'{task.duration_hours:.2f}',
-                task.approval_status,
-                'Yes' if task.is_late_entry else 'No',
+                task.approval_status.replace('_', ' ').title(),
+                'Yes' if task.is_late_entry else '',
                 (task.manager_comment or '')[:50],
             ])
+            total_hrs += task.duration_hours
+        writer.writerow(['', '', '', '', 'TOTAL', '', '',
+                          f'{total_hrs:.2f}', '', '', ''])
+        writer.writerow([])
+        writer.writerow(['END OF REPORT'])
 
         csv_data = output.getvalue().encode('utf-8-sig')
         self.report_file = base64.b64encode(csv_data)
