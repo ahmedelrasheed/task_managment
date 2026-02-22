@@ -54,16 +54,9 @@
     font-size: 1.1rem !important;
     color: #fff !important;
 }
-/* Mobile burger toggle — styled to match */
+/* Mobile burger toggle — hidden */
 .o_mobile_menu_toggle {
-    background: rgba(255, 255, 255, 0.1) !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    border-radius: 8px !important;
-    color: #fff !important;
-    transition: all 0.2s ease !important;
-}
-.o_mobile_menu_toggle:hover {
-    background: rgba(255, 255, 255, 0.22) !important;
+    display: none !important;
 }
 
 /* --- 1c. Brand (current app name) --- */

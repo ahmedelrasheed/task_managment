@@ -6,7 +6,7 @@
         <field name="name">task.management.archive.form</field>
         <field name="model">task.management.archive</field>
         <field name="arch" type="xml">
-            <form string="Library Entry" delete="1">
+            <form string="Library Entry" delete="0">
                 <sheet>
                     <group>
                         <group>
@@ -71,7 +71,7 @@
         <field name="name">task.management.archive.tree</field>
         <field name="model">task.management.archive</field>
         <field name="arch" type="xml">
-            <tree string="Library" delete="1">
+            <tree string="Library" delete="0" import="0" export_xlsx="0">
                 <field name="name"/>
                 <field name="project_name"/>
                 <field name="role_played"/>
@@ -115,6 +115,7 @@
         <field name="res_model">task.management.archive</field>
         <field name="view_mode">tree,form</field>
         <field name="domain">[('user_id', '=', uid)]</field>
+        <field name="context">{'delete': False}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 Add a project to your library
@@ -133,7 +134,7 @@
             (0, 0, {'view_mode': 'form', 'view_id': ref('view_archive_form_readonly')}),
         ]"/>
         <field name="domain">[('visibility', '=', 'public')]</field>
-        <field name="context">{'create': False}</field>
+        <field name="context">{'create': False, 'delete': False}</field>
     </record>
 
 </odoo>
