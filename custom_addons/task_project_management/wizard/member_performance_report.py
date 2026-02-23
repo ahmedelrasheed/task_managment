@@ -225,7 +225,7 @@ class MemberPerformanceReport(models.TransientModel):
                     'approval_status': task.approval_status,
                     'is_late_entry': task.is_late_entry,
                 }))
-            report.task_line_ids = task_lines
+            report.task_line_ids = task_lines or TaskLine
 
             # Project breakdown lines
             project_lines = []
@@ -248,7 +248,7 @@ class MemberPerformanceReport(models.TransientModel):
                     'late_entries': len(
                         p_tasks.filtered(lambda t: t.is_late_entry)),
                 }))
-            report.project_line_ids = project_lines
+            report.project_line_ids = project_lines or ProjectLine
 
 
     def action_export_csv(self):

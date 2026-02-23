@@ -107,6 +107,9 @@ class TaskManagementTask(models.Model):
     is_current_user_pm = fields.Boolean(
         compute='_compute_is_current_user_pm',
     )
+    is_current_user_project_pm = fields.Boolean(
+        compute='_compute_is_current_user_project_pm',
+    )
     can_assign = fields.Boolean(
         compute='_compute_can_assign',
     )
@@ -126,6 +129,21 @@ class TaskManagementTask(models.Model):
             'task_project_management.group_admin_manager')
         for task in self:
             task.is_current_user_pm = is_pm
+
+    @api.depends('project_id')
+    @api.depends_context('uid')
+    def _compute_is_current_user_project_pm(self):
+        """Check if current user is PM of the task's project (or is admin)."""
+        is_admin = self.env.user.has_group(
+            'task_project_management.group_admin_manager')
+        for task in self:
+            if is_admin:
+                task.is_current_user_project_pm = True
+            elif task.project_id:
+                task.is_current_user_project_pm = self.env.uid in \
+                    task.project_id.project_manager_ids.mapped('user_id.id')
+            else:
+                task.is_current_user_project_pm = False
 
     @api.depends_context('uid')
     def _compute_can_assign(self):
@@ -187,11 +205,28 @@ class TaskManagementTask(models.Model):
     @api.onchange('member_id')
     def _onchange_member_id_project_domain(self):
         """Restrict project dropdown: admins see all active projects,
-        PMs and members see only projects they are a member of."""
+        PMs see projects they manage or are a member of,
+        members see only projects they are a member of."""
         is_admin = self.env.user.has_group(
             'task_project_management.group_admin_manager')
         if is_admin:
             return {'domain': {'project_id': [('status', 'in', ['waiting', 'active'])]}}
+        is_pm = self.env.user.has_group(
+            'task_project_management.group_project_manager')
+        if is_pm:
+            if self.member_id:
+                return {'domain': {'project_id': [
+                    ('status', 'in', ['waiting', 'active']),
+                    '|',
+                    ('member_ids', '=', self.member_id.id),
+                    ('project_manager_ids', '=', self.member_id.id),
+                ]}}
+            return {'domain': {'project_id': [
+                ('status', 'in', ['waiting', 'active']),
+                '|',
+                ('member_ids.user_id', '=', self.env.uid),
+                ('project_manager_ids.user_id', '=', self.env.uid),
+            ]}}
         if self.member_id:
             return {'domain': {'project_id': [
                 ('status', 'in', ['waiting', 'active']),
@@ -359,9 +394,9 @@ class TaskManagementTask(models.Model):
     @api.constrains('member_id', 'project_id')
     def _check_member_in_project(self):
         """Ensure the member is assigned to the project.
-        PMs can only add tasks for themselves in projects where they
-        are a regular member (not PM). PMs can add tasks on behalf of
-        members in their managed projects.
+        PMs can add tasks for themselves in projects they manage or
+        are a member of. PMs can add tasks on behalf of members in
+        their managed projects.
         Admins can enter tasks for any member in any project."""
         for task in self:
             project = task.sudo().project_id
@@ -379,14 +414,10 @@ class TaskManagementTask(models.Model):
                     current_member in project.project_manager_ids)
                 # PM adding task for themselves
                 if task.member_id == current_member:
+                    # PM can add tasks in projects they manage or
+                    # are a regular member of
                     if is_manager_of_project:
-                        raise ValidationError(
-                            _('As a Project Manager of "%(project)s", '
-                              'you cannot add tasks for yourself here. '
-                              'Add tasks in projects where you are a '
-                              'regular member.',
-                              project=project.name))
-                    # PM is a regular member of this project
+                        continue
                     if task.member_id in project.member_ids:
                         continue
                     raise ValidationError(
@@ -525,6 +556,34 @@ class TaskManagementTask(models.Model):
         return records
 
     def write(self, vals):
+        # Enforce field-level write restrictions based on role vs task ownership
+        is_admin = self.env.user.has_group(
+            'task_project_management.group_admin_manager')
+        if not is_admin:
+            current_member = self.env[
+                'task.management.member'].sudo()._get_member_for_user()
+            for task in self:
+                is_task_member = (task.member_id == current_member)
+                is_project_pm = (
+                    task.project_id and
+                    self.env.uid in
+                    task.project_id.project_manager_ids.mapped('user_id.id'))
+                if is_project_pm and not is_task_member:
+                    # PM reviewing someone else's task — only PM fields allowed
+                    pm_allowed = {
+                        'approval_status', 'manager_comment',
+                        'message_follower_ids', 'message_ids',
+                    }
+                    for f in list(set(vals.keys()) - pm_allowed):
+                        vals.pop(f, None)
+                    if not vals:
+                        return True
+                elif is_task_member:
+                    # Task member (even if PM) — cannot write manager_comment
+                    vals.pop('manager_comment', None)
+                    if not vals:
+                        return True
+
         # Capture old statuses BEFORE any write happens
         old_statuses = {task.id: task.approval_status for task in self}
 
@@ -551,15 +610,15 @@ class TaskManagementTask(models.Model):
                                       if task.assigned_by_id else 'pending')
                         vals = dict(vals, approval_status=new_status)
 
-            # If member edits an assigned task, submit it
-            # PM/Admin editing assignment details should NOT trigger submission
+            # If the assigned member edits an assigned task, submit it
+            # The assigning PM/Admin editing should NOT trigger submission
             if task.approval_status == 'assigned':
                 if 'approval_status' not in vals:
-                    is_pm = self.env.user.has_group(
-                        'task_project_management.group_project_manager')
-                    is_admin = self.env.user.has_group(
-                        'task_project_management.group_admin_manager')
-                    if not is_pm and not is_admin:
+                    is_assigned_member = (
+                        task.member_id
+                        and task.member_id.user_id.id == self.env.uid
+                    )
+                    if is_assigned_member:
                         submit_fields = {'date', 'time_from', 'time_to',
                                          'description', 'attachment_ids'}
                         if set(vals.keys()) & submit_fields:

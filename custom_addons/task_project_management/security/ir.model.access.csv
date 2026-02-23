@@ -40,8 +40,8 @@ access_project_manager_role,task.management.project.manager,model_task_managemen
 access_task_manager,task.management.task.manager,model_task_management_task,group_manager,1,0,0,0
 access_audit_manager,task.management.task.audit.manager,model_task_management_task_audit,group_manager,1,0,0,0
 access_phase_manager,task.management.project.phase.manager,model_task_management_project_phase,group_manager,1,0,0,0
-access_complaint_member,task.management.complaint.member,model_task_management_complaint,group_member,1,0,1,0
-access_complaint_pm,task.management.complaint.pm,model_task_management_complaint,group_project_manager,1,0,0,0
+access_complaint_member,task.management.complaint.member,model_task_management_complaint,group_member,1,1,1,0
+access_complaint_pm,task.management.complaint.pm,model_task_management_complaint,group_project_manager,0,0,0,0
 access_complaint_admin,task.management.complaint.admin,model_task_management_complaint,group_admin_manager,1,1,1,1
 access_complaint_manager,task.management.complaint.manager,model_task_management_complaint,group_manager,1,1,0,0
 access_complaint_wizard_member,task.management.complaint.wizard.member,model_task_management_complaint_wizard,group_member,1,1,1,1

@@ -33,6 +33,18 @@ class TaskManagementMember(models.Model):
         for rec in self:
             rec.is_current_user_admin = is_admin
 
+    # Manager oversight fields
+    supervise_all_projects = fields.Boolean(
+        string='Supervise All Projects',
+        default=False,
+    )
+    supervised_project_ids = fields.Many2many(
+        'task.management.project',
+        'project_oversight_manager_rel',
+        'member_id', 'project_id',
+        string='Supervised Projects',
+    )
+
     # Relational fields
     managed_project_ids = fields.Many2many(
         'task.management.project',
@@ -100,7 +112,15 @@ class TaskManagementMember(models.Model):
                         'groups_id': [(4, role_group.id)],
                     })
                     vals['user_id'] = new_user.id
-        return super().create(vals_list)
+        records = super().create(vals_list)
+        # Auto-add global managers to all existing projects
+        for rec in records:
+            if rec.role == 'manager' and rec.supervise_all_projects:
+                all_projects = self.env['task.management.project'].sudo().search([])
+                all_projects.sudo().write({
+                    'manager_ids': [(4, rec.id)],
+                })
+        return records
 
     def write(self, vals):
         res = super().write(vals)
@@ -118,6 +138,21 @@ class TaskManagementMember(models.Model):
                             [(3, g.id) for g in all_groups]
                             + [(4, role_group.id)]
                         ),
+                    })
+        # Handle manager oversight assignment changes
+        if 'supervise_all_projects' in vals or 'supervised_project_ids' in vals:
+            for rec in self.filtered(lambda m: m.role == 'manager'):
+                all_projects = self.env['task.management.project'].sudo().search([])
+                if rec.supervise_all_projects:
+                    # Add to ALL projects
+                    all_projects.sudo().write({
+                        'manager_ids': [(4, rec.id)],
+                    })
+                else:
+                    # Remove from projects not in supervised_project_ids
+                    projects_to_remove = all_projects - rec.supervised_project_ids
+                    projects_to_remove.sudo().write({
+                        'manager_ids': [(3, rec.id)],
                     })
         return res
 

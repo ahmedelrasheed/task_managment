@@ -277,13 +277,7 @@
         <field name="groups" eval="[(4, ref('group_member'))]"/>
     </record>
 
-    <!-- PM: complaints from managed project tasks -->
-    <record id="rule_complaint_pm" model="ir.rule">
-        <field name="name">Complaint: PM sees managed project complaints</field>
-        <field name="model_id" ref="model_task_management_complaint"/>
-        <field name="domain_force">[('task_id.project_id.project_manager_ids.user_id', '=', user.id)]</field>
-        <field name="groups" eval="[(4, ref('group_project_manager'))]"/>
-    </record>
+    <!-- PM: no access to complaints (removed) -->
 
     <!-- Admin: all complaints -->
     <record id="rule_complaint_admin" model="ir.rule">

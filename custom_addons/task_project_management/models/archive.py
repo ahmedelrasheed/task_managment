@@ -1,5 +1,5 @@
 from odoo import models, fields, api, _
-from odoo.exceptions import AccessError
+from odoo.exceptions import AccessError, UserError
 
 
 class TaskManagementArchive(models.Model):
@@ -54,12 +54,34 @@ class TaskManagementArchive(models.Model):
                     _('You can only modify your own library entries.'))
 
     def _sync_attachment_visibility(self):
-        """Set attachment public flag based on library visibility."""
+        """Sync attachment access based on library visibility.
+        For public entries: set public=True and clear res_model/res_id
+        so all logged-in users can read the attachments.
+        For private entries: link to the archive record so only users
+        with access to the record can read the attachments."""
         for rec in self:
-            if rec.attachment_ids:
+            if not rec.attachment_ids:
+                continue
+            if rec.visibility == 'public':
                 rec.attachment_ids.sudo().write({
-                    'public': rec.visibility == 'public',
+                    'public': True,
+                    'res_model': False,
+                    'res_id': 0,
                 })
+            else:
+                # Check if any attachment is also linked to a public entry
+                for att in rec.attachment_ids:
+                    other_public = self.sudo().search([
+                        ('attachment_ids', 'in', att.id),
+                        ('visibility', '=', 'public'),
+                        ('id', '!=', rec.id),
+                    ], limit=1)
+                    if not other_public:
+                        att.sudo().write({
+                            'public': False,
+                            'res_model': rec._name,
+                            'res_id': rec.id,
+                        })
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -77,3 +99,6 @@ class TaskManagementArchive(models.Model):
     def unlink(self):
         self._check_owner()
         return super().unlink()
+
+    def copy(self, default=None):
+        raise UserError(_('Duplicating library entries is not allowed.'))

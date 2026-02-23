@@ -210,7 +210,7 @@ class ProjectPerformanceReport(models.TransientModel):
                     'rejected_count': len(m_tasks.filtered(
                         lambda t: t.approval_status in ('rejected', 'assigned_rejected'))),
                 }))
-            report.member_line_ids = member_lines
+            report.member_line_ids = member_lines or MemberLine
 
             # Task details
             task_lines = []
@@ -226,7 +226,7 @@ class ProjectPerformanceReport(models.TransientModel):
                     'is_late_entry': task.is_late_entry,
                     'manager_comment': (task.manager_comment or '')[:50],
                 }))
-            report.task_line_ids = task_lines
+            report.task_line_ids = task_lines or TaskLine
 
             # Phase breakdown
             phase_lines = []
@@ -237,7 +237,7 @@ class ProjectPerformanceReport(models.TransientModel):
                     'completion_rate': phase.completion_rate,
                     'effective_progress': phase.effective_progress,
                 }))
-            report.phase_line_ids = phase_lines
+            report.phase_line_ids = phase_lines or PhaseLine
 
     def action_export_csv(self):
         """Export the full project report as CSV."""

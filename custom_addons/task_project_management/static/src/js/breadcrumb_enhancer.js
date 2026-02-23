@@ -5,20 +5,25 @@ import { patch } from "@web/core/utils/patch";
 import { useService } from "@web/core/utils/hooks";
 import { onMounted, onPatched } from "@odoo/owl";
 
-// Models that are report wizards — hide breadcrumb entirely
-const REPORT_WIZARD_MODELS = [
-    'task.management.member.performance.report',
-    'task.management.project.performance.report',
-];
-
 // Models whose form breadcrumb should show a fixed label instead of record name
 const FORM_BREADCRUMB_LABELS = {
     'task.management.project': 'Project Report',
+    'task.management.member.performance.report': 'Member Performance Report',
+    'task.management.project.performance.report': 'Project Performance Report',
 };
 
-// Models where the "New" button should be hidden
-const HIDE_CREATE_MODELS = [
+// Models where the "New" button should be hidden for non-admin users
+const HIDE_CREATE_MODELS_NON_ADMIN = [
     'task.management.project',
+];
+
+// Models where the "Duplicate" action should be hidden
+const HIDE_DUPLICATE_MODELS = [
+    'task.management.archive',
+    'task.management.task',
+    'task.management.project',
+    'task.management.member',
+    'task.management.complaint',
 ];
 
 patch(ControlPanel.prototype, {
@@ -28,6 +33,11 @@ patch(ControlPanel.prototype, {
             this.menuService = useService("menu");
         } catch (_e) {
             this.menuService = null;
+        }
+        try {
+            this.userService = useService("user");
+        } catch (_e) {
+            this.userService = null;
         }
         onMounted(() => this._enhanceBreadcrumb());
         onPatched(() => this._enhanceBreadcrumb());
@@ -43,19 +53,40 @@ patch(ControlPanel.prototype, {
             const breadcrumbOl = cpEl.querySelector('.breadcrumb');
             if (!breadcrumbOl) return;
 
-            // Check if this is a report wizard — hide breadcrumb entirely
             const resModel = this.env?.config?.resModel || '';
-            if (REPORT_WIZARD_MODELS.includes(resModel)) {
-                breadcrumbOl.style.display = 'none';
-                return;
+
+            // Hide "New" button for specific models (non-admin only)
+            if (HIDE_CREATE_MODELS_NON_ADMIN.includes(resModel)) {
+                const isAdmin = this.userService &&
+                    this.userService.hasGroup('task_project_management.group_admin_manager');
+                if (isAdmin && isAdmin.then) {
+                    isAdmin.then(result => {
+                        if (!result) {
+                            const btns = cpEl.querySelectorAll(
+                                '.o_form_button_create, .o_list_button_add'
+                            );
+                            btns.forEach(btn => btn.style.display = 'none');
+                        }
+                    });
+                } else if (!isAdmin) {
+                    const createButtons = cpEl.querySelectorAll(
+                        '.o_form_button_create, .o_list_button_add'
+                    );
+                    createButtons.forEach(btn => btn.style.display = 'none');
+                }
             }
 
-            // Hide "New" button for specific models
-            if (HIDE_CREATE_MODELS.includes(resModel)) {
-                const createButtons = cpEl.querySelectorAll(
-                    '.o_form_button_create, .o_list_button_add'
+            // Hide "Duplicate" action menu item for specific models
+            if (HIDE_DUPLICATE_MODELS.includes(resModel)) {
+                const actionMenus = cpEl.querySelectorAll(
+                    '.o_cp_action_menus .dropdown-menu .dropdown-item, .o_cp_action_menus .o_menu_item'
                 );
-                createButtons.forEach(btn => btn.style.display = 'none');
+                actionMenus.forEach(item => {
+                    const text = item.textContent.trim().toLowerCase();
+                    if (text === 'duplicate' || text === 'نسخ') {
+                        item.style.display = 'none';
+                    }
+                });
             }
 
             // Otherwise show breadcrumb and inject section name

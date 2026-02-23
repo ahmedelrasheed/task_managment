@@ -6,7 +6,7 @@
         <field name="name">task.management.member.form</field>
         <field name="model">task.management.member</field>
         <field name="arch" type="xml">
-            <form string="Members">
+            <form string="Members" duplicate="0">
                 <field name="is_current_user_admin" invisible="1"/>
                 <field name="user_id" invisible="1"/>
                 <header>
@@ -29,6 +29,17 @@
                         <group>
                             <field name="job_title" readonly="not is_current_user_admin and id"/>
                             <field name="role" readonly="not is_current_user_admin and id"/>
+                        </group>
+                    </group>
+                    <group invisible="role != 'manager'" string="Manager Oversight">
+                        <group>
+                            <field name="supervise_all_projects"/>
+                        </group>
+                        <group>
+                            <field name="supervised_project_ids"
+                                   widget="many2many_tags"
+                                   invisible="supervise_all_projects"
+                                   domain="[('status', '!=', 'archived')]"/>
                         </group>
                     </group>
                     <notebook>

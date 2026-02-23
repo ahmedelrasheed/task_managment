@@ -6,7 +6,7 @@
         <field name="name">task.management.complaint.form</field>
         <field name="model">task.management.complaint</field>
         <field name="arch" type="xml">
-            <form string="Complaint">
+            <form string="Complaint" duplicate="0">
                 <header>
                     <button name="action_approve" string="Approve"
                             type="object" class="btn-primary"
@@ -36,7 +36,8 @@
                         </group>
                     </group>
                     <group>
-                        <field name="message"/>
+                        <field name="message"
+                               readonly="status != 'pending'"/>
                     </group>
                     <group string="Project Manager Review"
                            groups="task_project_management.group_manager,task_project_management.group_admin_manager">

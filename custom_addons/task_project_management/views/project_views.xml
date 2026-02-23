@@ -6,7 +6,7 @@
         <field name="name">task.management.project.form</field>
         <field name="model">task.management.project</field>
         <field name="arch" type="xml">
-            <form string="Project Report" create="0">
+            <form string="Project Report" create="0" duplicate="0">
                 <field name="is_admin_user" invisible="1"/>
                 <header>
                     <field name="status" widget="statusbar"
@@ -61,7 +61,7 @@
                         </page>
                         <page string="Members" name="members">
                             <field name="member_ids"
-                                   domain="[('id', 'not in', project_manager_ids)]"
+                                   domain="[('id', 'not in', project_manager_ids), ('role', '!=', 'manager')]"
                                    readonly="id and not is_admin_user">
                                 <tree>
                                     <field name="name"/>
@@ -103,7 +103,7 @@
         <field name="name">task.management.project.tree</field>
         <field name="model">task.management.project</field>
         <field name="arch" type="xml">
-            <tree string="Projects" create="0">
+            <tree string="Projects">
                 <field name="name"/>
                 <field name="status" widget="badge"
                        decoration-danger="status == 'waiting'"
@@ -156,7 +156,7 @@
         <field name="name">Projects</field>
         <field name="res_model">task.management.project</field>
         <field name="view_mode">tree,form</field>
-        <field name="context">{'search_default_filter_active': 1, 'create': False}</field>
+        <field name="context">{'search_default_filter_active': 1}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 No projects found
