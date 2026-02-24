@@ -11,11 +11,15 @@
 /* --- 1a. Main Container --- */
 .o_main_navbar {
     background: #0B3D91 !important;
-    height: 48px !important;
     border-bottom: none !important;
     box-shadow: 0 1px 6px rgba(11, 61, 145, 0.35) !important;
     font-family: "Inter", "Segoe UI", Roboto, sans-serif !important;
     z-index: 1030 !important;
+}
+@media (min-width: 768px) {
+    .o_main_navbar {
+        height: 48px !important;
+    }
 }
 
 /* --- 1b. Apps (hamburger/grid) button — styled to match navbar --- */
@@ -54,9 +58,22 @@
     font-size: 1.1rem !important;
     color: #fff !important;
 }
-/* Mobile burger toggle — hidden */
-.o_mobile_menu_toggle {
-    display: none !important;
+/* Mobile: Menu hidden by default, shown when toggled */
+@media (max-width: 767px) {
+    .o_main_navbar .o_menu_sections,
+    .o_main_navbar .o_menu_sections.d-none {
+        display: none !important;
+    }
+    .o_main_navbar .o_menu_sections.o_mobile_show {
+        display: flex !important;
+    }
+    .o_main_navbar .o_menu_brand,
+    .o_main_navbar .o_menu_brand.d-none {
+        display: none !important;
+    }
+    .o_navbar_apps_menu {
+        display: none !important;
+    }
 }
 
 /* --- 1c. Brand (current app name) --- */
@@ -65,15 +82,19 @@
     font-weight: 700 !important;
     font-size: 1.05rem !important;
     letter-spacing: 0.2px !important;
-    padding: 0 12px 0 4px !important;
-    height: 48px !important;
-    display: flex !important;
-    align-items: center !important;
     background: transparent !important;
     border: none !important;
-    border-right: 1px solid rgba(255,255,255,0.15) !important;
-    margin-right: 4px !important;
     transition: opacity 0.2s ease !important;
+}
+@media (min-width: 768px) {
+    .o_main_navbar .o_menu_brand {
+        padding: 0 12px 0 4px !important;
+        height: 48px !important;
+        display: flex !important;
+        align-items: center !important;
+        border-right: 1px solid rgba(255,255,255,0.15) !important;
+        margin-right: 4px !important;
+    }
 }
 .o_main_navbar .o_menu_brand:hover,
 .o_main_navbar .o_menu_brand:focus {
@@ -88,15 +109,20 @@
     font-weight: 500 !important;
     font-size: 0.875rem !important;
     letter-spacing: 0.15px !important;
-    padding: 0 14px !important;
-    height: 48px !important;
-    display: flex !important;
-    align-items: center !important;
     background: transparent !important;
     border: none !important;
-    border-bottom: 2px solid transparent !important;
     transition: color 0.2s ease, border-color 0.2s ease !important;
     position: relative !important;
+}
+@media (min-width: 768px) {
+    .o_main_navbar .o_menu_sections .o_nav_entry,
+    .o_main_navbar .o_menu_sections > .dropdown > .dropdown-toggle {
+        padding: 0 14px !important;
+        height: 48px !important;
+        display: flex !important;
+        align-items: center !important;
+        border-bottom: 2px solid transparent !important;
+    }
 }
 
 /* Hover: text brightens + bottom accent line */
@@ -180,10 +206,14 @@
     color: rgba(255,255,255,0.85) !important;
     background: transparent !important;
     border: none !important;
-    padding: 0 12px !important;
-    height: 48px !important;
-    display: flex !important;
-    align-items: center !important;
+}
+@media (min-width: 768px) {
+    .o_main_navbar .o_menu_sections_more > .dropdown-toggle {
+        padding: 0 12px !important;
+        height: 48px !important;
+        display: flex !important;
+        align-items: center !important;
+    }
 }
 .o_main_navbar .o_menu_sections_more > .dropdown-toggle:hover {
     color: #fff !important;
@@ -199,11 +229,16 @@
     color: rgba(255,255,255,0.88) !important;
     background: transparent !important;
     border: none !important;
-    padding: 0 10px !important;
-    height: 48px !important;
-    display: flex !important;
-    align-items: center !important;
     transition: color 0.2s ease, opacity 0.2s ease !important;
+}
+@media (min-width: 768px) {
+    .o_main_navbar .o_menu_systray > div > .dropdown-toggle,
+    .o_main_navbar .o_menu_systray > div > .o_nav_entry {
+        padding: 0 10px !important;
+        height: 48px !important;
+        display: flex !important;
+        align-items: center !important;
+    }
 }
 .o_main_navbar .o_menu_systray > div > .dropdown-toggle:hover,
 .o_main_navbar .o_menu_systray > div > .dropdown-toggle:focus,
@@ -1289,4 +1324,144 @@ body.task-font-xlarge .o_list_view thead th {
 .form-switch .form-check-input:checked {
     background-color: #0B3D91 !important;
     border-color: #0B3D91 !important;
+}
+
+/* ============================================================
+   20. MOBILE / RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 767px) {
+    /* === NAVBAR: Mobile layout === */
+    .o_main_navbar {
+        height: auto !important;
+        min-height: 40px !important;
+        flex-wrap: wrap !important;
+    }
+
+    /* Menu sections: vertical dropdown from hamburger */
+    .o_main_navbar .o_menu_sections {
+        order: 10 !important;
+        width: 100% !important;
+        flex-direction: column !important;
+        background: #072A66 !important;
+        padding: 0 !important;
+    }
+    .o_main_navbar .o_menu_sections.o_mobile_show {
+        display: flex !important;
+    }
+
+    .o_main_navbar .o_menu_sections .o_nav_entry,
+    .o_main_navbar .o_menu_sections > .dropdown > .dropdown-toggle {
+        padding: 12px 16px !important;
+        font-size: 0.9rem !important;
+        height: auto !important;
+        border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+    }
+
+    /* Dropdown menus on mobile — full width */
+    .o_main_navbar .o_menu_sections .dropdown-menu {
+        position: static !important;
+        width: 100% !important;
+        background: #0A3578 !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+    }
+    .o_main_navbar .o_menu_sections .dropdown-menu .dropdown-item {
+        color: rgba(255,255,255,0.9) !important;
+        padding: 10px 16px 10px 32px !important;
+        font-size: 0.85rem !important;
+        border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+    }
+    .o_main_navbar .o_menu_sections .dropdown-menu .dropdown-item:hover {
+        background: rgba(255,255,255,0.1) !important;
+        color: #fff !important;
+    }
+
+    /* "More" menu on mobile */
+    .o_main_navbar .o_menu_sections_more > .dropdown-toggle {
+        padding: 12px 16px !important;
+        font-size: 0.9rem !important;
+        height: auto !important;
+    }
+
+    /* Hamburger button */
+    .o_mobile_hamburger {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 40px !important;
+        height: 40px !important;
+        background: #fff !important;
+        border: 2px solid #fff !important;
+        border-radius: 8px !important;
+        color: #0B3D91 !important;
+        cursor: pointer !important;
+        font-size: 1.5rem !important;
+        font-weight: bold !important;
+        margin: 4px 8px !important;
+        order: -1 !important;
+        line-height: 1 !important;
+    }
+    .o_mobile_hamburger:hover,
+    .o_mobile_hamburger:active {
+        background: #E8EEF7 !important;
+        color: #072A66 !important;
+    }
+
+    /* Systray compact on mobile */
+    .o_main_navbar .o_menu_systray {
+        gap: 0 !important;
+    }
+
+    .o_main_navbar .o_menu_systray > div > .dropdown-toggle,
+    .o_main_navbar .o_menu_systray > div > .o_nav_entry {
+        height: auto !important;
+        padding: 0 4px !important;
+    }
+
+    /* === DASHBOARD: Stack cards vertically === */
+    .task_dashboard .dashboard-header {
+        flex-direction: column;
+        text-align: center;
+        padding: 15px;
+        gap: 10px;
+    }
+
+    .task_dashboard .dashboard-header .header-left {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .task_dashboard .dashboard-header .dashboard-title {
+        font-size: 1.2rem;
+    }
+
+    .task_dashboard .kpi-card {
+        margin-bottom: 10px;
+    }
+
+    .task_dashboard .kpi-value {
+        font-size: 1.6rem;
+    }
+
+    .task_dashboard .table-responsive,
+    .task_dashboard .card-body {
+        overflow-x: auto;
+    }
+
+    .task_dashboard {
+        padding: 10px !important;
+    }
+
+    .task_dashboard .card {
+        margin-bottom: 10px;
+    }
+
+    /* === FORMS: Better touch targets === */
+    .o_form_view .o_statusbar_buttons .btn {
+        padding: 8px 12px !important;
+        font-size: 0.85rem !important;
+    }
 }

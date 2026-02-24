@@ -11,7 +11,7 @@
                 <header>
                     <button name="action_open_project_report" string="Project Report"
                             type="object" class="btn-secondary"
-                            groups="task_project_management.group_project_manager,task_project_management.group_admin_manager"/>
+                            groups="task_project_management.group_project_manager,task_project_management.group_admin_manager,task_project_management.group_manager"/>
                     <field name="status" widget="statusbar"
                            statusbar_visible="waiting,active,on_hold,completed,archived"
                            options="{'clickable': True}"
