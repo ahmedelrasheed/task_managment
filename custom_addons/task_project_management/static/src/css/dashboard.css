@@ -1312,6 +1312,34 @@ body.task-font-xlarge .o_list_view thead th {
 :root {
     --o-brand-odoo: #0B3D91 !important;
     --o-brand-primary: #0B3D91 !important;
+    --primary: #0B3D91 !important;
+    --bs-primary: #0B3D91 !important;
+    --bs-primary-rgb: 11, 61, 145 !important;
+    --o-webclient-color-scheme: #0B3D91 !important;
+}
+
+/* Progress bars — match theme */
+.o_progressbar .o_progress .bg-primary,
+.o_progressbar .o_progress > div,
+.o_field_widget .o_progressbar .o_progress .bg-primary,
+.o_field_widget .o_progressbar .o_progress > div,
+.bg-primary {
+    background-color: #0B3D91 !important;
+}
+.progress-bar,
+.o_progressbar .progress-bar,
+.o_field_widget .progress .progress-bar {
+    background: #0B3D91 !important;
+    background-color: #0B3D91 !important;
+}
+.o_progressbar .o_progressbar_value,
+.o_form_view .o_progressbar .o_progressbar_value {
+    color: #0B3D91 !important;
+}
+/* Progress bar percentage text */
+.o_progressbar .o_progressbar_value.o_animated_number,
+.o_field_widget .o_progressbar_value {
+    color: #0B3D91 !important;
 }
 
 /* Generic checkbox/toggle override */

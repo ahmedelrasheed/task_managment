@@ -47,6 +47,7 @@
                             <field name="phase_ids">
                                 <tree editable="bottom" delete="0"
                                       decoration-muted="not is_active or completion_rate == 100">
+                                    <field name="project_id" column_invisible="1"/>
                                     <field name="sequence" widget="handle"/>
                                     <field name="name"/>
                                     <field name="percentage"/>

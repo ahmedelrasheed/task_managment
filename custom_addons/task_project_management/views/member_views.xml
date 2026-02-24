@@ -12,10 +12,12 @@
                 <header>
                     <button name="action_open_member_report" string="Performance Report"
                             type="object" class="btn-secondary"
+                            invisible="not id"
                             groups="task_project_management.group_project_manager,task_project_management.group_admin_manager,task_project_management.group_manager"/>
                     <button name="action_assign_task"
                             string="Assign Task"
                             type="object" class="btn-primary"
+                            invisible="not id"
                             groups="task_project_management.group_project_manager"/>
                     <button name="action_change_password"
                             string="Change Password"
