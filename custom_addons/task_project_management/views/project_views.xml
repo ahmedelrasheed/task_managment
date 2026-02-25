@@ -61,15 +61,22 @@
                             </field>
                         </page>
                         <page string="Project Managers" name="managers">
-                            <field name="project_manager_ids" widget="many2many_tags"
+                            <field name="project_manager_ids"
                                    domain="[('id', 'not in', member_ids), ('user_id.groups_id', 'in', %(task_project_management.group_project_manager)d)]"
-                                   readonly="id and not is_admin_user"/>
+                                   readonly="id and not is_admin_user">
+                                <tree no_open="1">
+                                    <field name="name"/>
+                                    <field name="email"/>
+                                    <field name="job_title"/>
+                                    <field name="role"/>
+                                </tree>
+                            </field>
                         </page>
                         <page string="Members" name="members">
                             <field name="member_ids"
-                                   domain="[('id', 'not in', project_manager_ids), ('role', '!=', 'manager')]"
+                                   domain="[('id', 'not in', project_manager_ids), ('role', 'not in', ['manager', 'admin_manager'])]"
                                    readonly="id and not is_admin_user">
-                                <tree>
+                                <tree no_open="1">
                                     <field name="name"/>
                                     <field name="email"/>
                                     <field name="job_title"/>
@@ -79,8 +86,14 @@
                         </page>
                         <page string="Oversight Managers" name="oversight_managers"
                               groups="task_project_management.group_admin_manager">
-                            <field name="manager_ids" widget="many2many_tags"
-                                   domain="[('role', '=', 'manager')]"/>
+                            <field name="manager_ids"
+                                   domain="[('role', '=', 'manager')]">
+                                <tree no_open="1">
+                                    <field name="name"/>
+                                    <field name="email"/>
+                                    <field name="job_title"/>
+                                </tree>
+                            </field>
                         </page>
                         <page string="Tasks" name="tasks">
                             <field name="task_ids" mode="tree">
