@@ -30,4 +30,5 @@ class TaskManagementTaskAudit(models.Model):
         string='Changed At',
         required=True, default=fields.Datetime.now,
     )
+    previous_comment = fields.Text(string='Previous Comment')
     comment = fields.Text(string='Comment')

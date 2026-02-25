@@ -16,6 +16,7 @@
                        decoration-danger="new_status == 'rejected'"
                        decoration-info="new_status == 'assigned'"/>
                 <field name="changed_by"/>
+                <field name="previous_comment"/>
                 <field name="comment"/>
             </tree>
         </field>

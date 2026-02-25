@@ -587,8 +587,9 @@ class TaskManagementTask(models.Model):
                     if not vals:
                         return True
 
-        # Capture old statuses BEFORE any write happens
+        # Capture old statuses and comments BEFORE any write happens
         old_statuses = {task.id: task.approval_status for task in self}
+        old_comments = {task.id: task.manager_comment or '' for task in self}
 
         for task in self:
             # Block editing of approved tasks (except status/comment changes)
@@ -633,8 +634,9 @@ class TaskManagementTask(models.Model):
             new_status = vals['approval_status']
             for task in self:
                 old_status = old_statuses.get(task.id, 'pending')
+                previous_comment = old_comments.get(task.id, '')
                 comment = vals.get('manager_comment', '')
-                task._create_audit_entry(old_status, new_status, comment)
+                task._create_audit_entry(old_status, new_status, comment, previous_comment)
                 if new_status in ('approved', 'rejected'):
                     task._notify_member_status_change(new_status)
                 elif (new_status in ('pending',)
@@ -698,12 +700,13 @@ class TaskManagementTask(models.Model):
                     _('Only Project Managers of this project '
                       'or Admins can approve tasks.'))
 
-    def _create_audit_entry(self, old_status, new_status, comment=''):
+    def _create_audit_entry(self, old_status, new_status, comment='', previous_comment=''):
         self.env['task.management.task.audit'].sudo().create({
             'task_id': self.id,
             'old_status': old_status or False,
             'new_status': new_status,
             'changed_by': self.env.uid,
+            'previous_comment': previous_comment or False,
             'comment': comment,
         })
 
