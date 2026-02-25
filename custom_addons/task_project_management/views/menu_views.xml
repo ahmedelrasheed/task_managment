@@ -120,7 +120,8 @@
             '|',
             ('member_project_ids.manager_ids.user_id', '=', uid),
             ('managed_project_ids.manager_ids.user_id', '=', uid),
-            ('user_id', '!=', uid)
+            ('user_id', '!=', uid),
+            ('role', '!=', 'admin_manager')
         ]</field>
         <field name="context">{'create': False}</field>
         <field name="help" type="html">
