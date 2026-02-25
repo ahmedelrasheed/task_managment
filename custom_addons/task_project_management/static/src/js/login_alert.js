@@ -41,16 +41,17 @@ class LoginAlertService extends Component {
                     .join(", ");
                 const suffix = count > 3 ? _t(" (+%s more)", count - 3) : "";
 
-                this.notification.add(
+                const memberClose = this.notification.add(
                     _t("You have %s new task assignment(s): %s%s", count, names, suffix),
                     {
                         type: "info",
                         title: _t("New Assignments"),
-                        sticky: true,
+                        sticky: false,
                         buttons: [
                             {
                                 name: _t("View Assignments"),
                                 onClick: async () => {
+                                    memberClose();
                                     await this.orm.call(
                                         "task.management.task",
                                         "acknowledge_member_alerts",
@@ -63,6 +64,7 @@ class LoginAlertService extends Component {
                             {
                                 name: _t("Dismiss"),
                                 onClick: async () => {
+                                    memberClose();
                                     await this.orm.call(
                                         "task.management.task",
                                         "acknowledge_member_alerts",
@@ -71,8 +73,17 @@ class LoginAlertService extends Component {
                                 },
                             },
                         ],
+                        onClose: async () => {
+                            await this.orm.call(
+                                "task.management.task",
+                                "acknowledge_member_alerts",
+                                []
+                            );
+                        },
                     }
                 );
+                // Auto-dismiss after 5 seconds
+                setTimeout(() => memberClose(), 5000);
             }
 
             // PM alerts: new task submissions to review
@@ -84,16 +95,17 @@ class LoginAlertService extends Component {
                     .join(", ");
                 const suffix = count > 3 ? _t(" (+%s more)", count - 3) : "";
 
-                this.notification.add(
+                const pmClose = this.notification.add(
                     _t("%s new task submission(s) to review: %s%s", count, names, suffix),
                     {
                         type: "warning",
                         title: _t("Tasks Pending Review"),
-                        sticky: true,
+                        sticky: false,
                         buttons: [
                             {
                                 name: _t("Review Tasks"),
                                 onClick: async () => {
+                                    pmClose();
                                     await this.orm.call(
                                         "task.management.task",
                                         "acknowledge_pm_alerts",
@@ -106,6 +118,7 @@ class LoginAlertService extends Component {
                             {
                                 name: _t("Dismiss"),
                                 onClick: async () => {
+                                    pmClose();
                                     await this.orm.call(
                                         "task.management.task",
                                         "acknowledge_pm_alerts",
@@ -114,8 +127,17 @@ class LoginAlertService extends Component {
                                 },
                             },
                         ],
+                        onClose: async () => {
+                            await this.orm.call(
+                                "task.management.task",
+                                "acknowledge_pm_alerts",
+                                []
+                            );
+                        },
                     }
                 );
+                // Auto-dismiss after 5 seconds
+                setTimeout(() => pmClose(), 5000);
             }
         } catch (e) {
             // Silently fail - don't block user with alert errors
