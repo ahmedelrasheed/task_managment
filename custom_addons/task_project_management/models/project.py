@@ -38,7 +38,7 @@ class TaskManagementProject(models.Model):
         'project_member_rel',
         'project_id', 'member_id',
         string='Members',
-        domain=[('role', '!=', 'manager')],
+        domain=[('role', 'not in', ['manager', 'admin_manager'])],
     )
     task_ids = fields.One2many(
         'task.management.task', 'project_id',
@@ -160,11 +160,11 @@ class TaskManagementProject(models.Model):
     def _check_no_manager_as_member(self):
         for project in self:
             managers = project.member_ids.filtered(
-                lambda m: m.role == 'manager')
+                lambda m: m.role in ('manager', 'admin_manager'))
             if managers:
                 names = ', '.join(managers.mapped('name'))
                 raise ValidationError(
-                    _('A Manager (oversight role) cannot be added as a '
+                    _('A Manager cannot be added as a '
                       'project member: %s') % names)
 
     @api.constrains('phase_ids')
