@@ -2,6 +2,7 @@
 
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
+import { _t } from "@web/core/l10n/translation";
 import { Component, onMounted } from "@odoo/owl";
 
 /**
@@ -38,17 +39,17 @@ class LoginAlertService extends Component {
                     .map(a => a.assignment_name || a.project_name)
                     .slice(0, 3)
                     .join(", ");
-                const suffix = count > 3 ? ` (+${count - 3} more)` : "";
+                const suffix = count > 3 ? _t(" (+%s more)", count - 3) : "";
 
                 this.notification.add(
-                    `You have ${count} new task assignment(s): ${names}${suffix}`,
+                    _t("You have %s new task assignment(s): %s%s", count, names, suffix),
                     {
                         type: "info",
-                        title: "New Assignments",
+                        title: _t("New Assignments"),
                         sticky: true,
                         buttons: [
                             {
-                                name: "View Assignments",
+                                name: _t("View Assignments"),
                                 onClick: async () => {
                                     await this.orm.call(
                                         "task.management.task",
@@ -60,7 +61,7 @@ class LoginAlertService extends Component {
                                 primary: true,
                             },
                             {
-                                name: "Dismiss",
+                                name: _t("Dismiss"),
                                 onClick: async () => {
                                     await this.orm.call(
                                         "task.management.task",
@@ -81,17 +82,17 @@ class LoginAlertService extends Component {
                     .map(a => `${a.member_name} (${a.project_name})`)
                     .slice(0, 3)
                     .join(", ");
-                const suffix = count > 3 ? ` (+${count - 3} more)` : "";
+                const suffix = count > 3 ? _t(" (+%s more)", count - 3) : "";
 
                 this.notification.add(
-                    `${count} new task submission(s) to review: ${names}${suffix}`,
+                    _t("%s new task submission(s) to review: %s%s", count, names, suffix),
                     {
                         type: "warning",
-                        title: "Tasks Pending Review",
+                        title: _t("Tasks Pending Review"),
                         sticky: true,
                         buttons: [
                             {
-                                name: "Review Tasks",
+                                name: _t("Review Tasks"),
                                 onClick: async () => {
                                     await this.orm.call(
                                         "task.management.task",
@@ -103,7 +104,7 @@ class LoginAlertService extends Component {
                                 primary: true,
                             },
                             {
-                                name: "Dismiss",
+                                name: _t("Dismiss"),
                                 onClick: async () => {
                                     await this.orm.call(
                                         "task.management.task",

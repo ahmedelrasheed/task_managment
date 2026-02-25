@@ -16,7 +16,7 @@
     </record>
 
     <record id="action_admin_dashboard" model="ir.actions.client">
-        <field name="name">Admin Dashboard</field>
+        <field name="name">Manager Dashboard</field>
         <field name="tag">task_project_management.admin_dashboard</field>
     </record>
 
@@ -302,7 +302,7 @@
               groups="task_project_management.group_admin_manager,task_project_management.group_manager"/>
 
     <menuitem id="menu_admin_dashboard"
-              name="Admin Dashboard"
+              name="Manager Dashboard"
               parent="menu_admin_parent"
               action="action_admin_dashboard"
               sequence="10"

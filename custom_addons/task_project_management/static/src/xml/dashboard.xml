@@ -337,7 +337,7 @@
                     <div class="header-left">
                         <img class="company-logo" src="/web/binary/company_logo" t-att-alt="_t('Logo')"/>
                         <div>
-                            <h2 class="dashboard-title"><t t-esc="_t('Administration Dashboard')"/></h2>
+                            <h2 class="dashboard-title"><t t-esc="_t('Manager Dashboard')"/></h2>
                             <p class="company-name" t-esc="state.companyName"/>
                         </div>
                     </div>

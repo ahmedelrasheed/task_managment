@@ -1,5 +1,5 @@
 from odoo import models, fields, api, _
-from odoo.exceptions import AccessError, UserError
+from odoo.exceptions import AccessError, UserError, ValidationError
 
 
 class TaskManagementArchive(models.Model):
@@ -81,15 +81,30 @@ class TaskManagementArchive(models.Model):
                             'res_id': rec.id,
                         })
 
+    def _validate_attachment_size(self):
+        """Validate that no attachment exceeds the configured max size."""
+        max_mb = int(self.env['ir.config_parameter'].sudo().get_param(
+            'task_project_management.max_attachment_size', '100'))
+        max_bytes = max_mb * 1024 * 1024
+        for record in self:
+            for attachment in record.attachment_ids:
+                if attachment.file_size and attachment.file_size > max_bytes:
+                    raise ValidationError(
+                        _('File "%(name)s" exceeds maximum size of %(size)s MB.',
+                          name=attachment.name, size=max_mb))
+
     @api.model_create_multi
     def create(self, vals_list):
         records = super().create(vals_list)
+        records._validate_attachment_size()
         records._sync_attachment_visibility()
         return records
 
     def write(self, vals):
         self._check_owner()
         result = super().write(vals)
+        if 'attachment_ids' in vals:
+            self._validate_attachment_size()
         if 'visibility' in vals or 'attachment_ids' in vals:
             self._sync_attachment_visibility()
         return result

@@ -175,7 +175,7 @@ msgstr ""
 #. module: task_project_management
 #: model:ir.actions.client,name:task_project_management.action_admin_dashboard
 #: model:ir.ui.menu,name:task_project_management.menu_admin_dashboard
-msgid "Admin Dashboard"
+msgid "Manager Dashboard"
 msgstr ""
 
 #. module: task_project_management
@@ -192,7 +192,7 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/task_project_management/static/src/xml/dashboard.xml:0
 #, python-format
-msgid "Administration Dashboard"
+msgid "Manager Dashboard"
 msgstr ""
 
 #. module: task_project_management
