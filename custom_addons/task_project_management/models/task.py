@@ -847,8 +847,9 @@ class TaskManagementTask(models.Model):
             lambda t: t.date and t.date >= month_start).mapped('duration_hours'))
 
         recent = tasks[:10]
-        status_map = dict(self._fields['approval_status'].selection)
-        type_map = dict(self._fields['task_type'].selection)
+        fget = self.fields_get(['approval_status', 'task_type'])
+        status_map = dict(fget['approval_status']['selection'])
+        type_map = dict(fget['task_type']['selection'])
         recent_data = [{
             'id': t.id,
             'date': str(t.date),
@@ -922,6 +923,10 @@ class TaskManagementTask(models.Model):
         else:
             return {'projects': []}
 
+        Project = self.env['task.management.project']
+        status_map = dict(
+            Project.fields_get(['status'])['status']['selection'])
+
         result = []
         for proj in projects:
             members_data = []
@@ -955,6 +960,7 @@ class TaskManagementTask(models.Model):
                 'id': proj.id,
                 'name': proj.name,
                 'status': proj.status,
+                'status_display': status_map.get(proj.status, proj.status),
                 'logged_hours': f'{proj.total_logged_hours:.2f}',
                 'progress': round(proj.progress_percentage, 1),
                 'pending_tasks': proj.pending_task_count,
@@ -974,6 +980,8 @@ class TaskManagementTask(models.Model):
 
         projects = Project.search([])
         all_tasks = self.sudo().search([])
+        status_map = dict(
+            Project.fields_get(['status'])['status']['selection'])
 
         projects_data = []
         total_late = 0
@@ -984,6 +992,7 @@ class TaskManagementTask(models.Model):
                 'id': proj.id,
                 'name': proj.name,
                 'status': proj.status,
+                'status_display': status_map.get(proj.status, proj.status),
                 'progress': round(proj.progress_percentage, 1),
                 'task_count': proj.task_count,
                 'pending_tasks': proj.pending_task_count,
@@ -1017,24 +1026,24 @@ class TaskManagementTask(models.Model):
         writer = csv.writer(output)
 
         # -- Report Header --
-        writer.writerow(['PROJECT MANAGER DASHBOARD REPORT'])
+        writer.writerow([_('PROJECT MANAGER DASHBOARD REPORT')])
         writer.writerow([])
-        writer.writerow(['Company:', company])
-        writer.writerow(['Report Date:', str(today)])
-        writer.writerow(['Total Projects:', len(data.get('projects', []))])
+        writer.writerow([_('Company:'), company])
+        writer.writerow([_('Report Date:'), str(today)])
+        writer.writerow([_('Total Projects:'), len(data.get('projects', []))])
         writer.writerow(SEP)
 
         projects = data.get('projects', [])
         for idx, proj in enumerate(projects, 1):
             # -- Project Header --
-            writer.writerow([f'PROJECT {idx}: {proj["name"].upper()}'])
+            writer.writerow([_('PROJECT %(num)s: %(name)s') % {'num': idx, 'name': proj["name"].upper()}])
             writer.writerow([])
             writer.writerow(
-                ['', 'Status', 'Progress', 'Logged Hours',
-                 'Pending',
-                 'Approved',
-                 'Rejected',
-                 'Assigned Tasks'])
+                ['', _('Status'), _('Progress'), _('Logged Hours'),
+                 _('Pending'),
+                 _('Approved'),
+                 _('Rejected'),
+                 _('Assigned Tasks')])
             writer.writerow(
                 ['', proj['status'].replace('_', ' ').title(),
                  f'{proj["progress"]}%', proj['logged_hours'],
@@ -1046,10 +1055,10 @@ class TaskManagementTask(models.Model):
 
             # -- Team Members --
             if proj.get('members'):
-                writer.writerow(['', 'TEAM MEMBERS'])
+                writer.writerow(['', _('TEAM MEMBERS')])
                 writer.writerow(
-                    ['', 'No.', 'Member', 'Tasks', 'Hours',
-                     'Approval Rate', 'Late Entries'])
+                    ['', _('No.'), _('Member'), _('Tasks'), _('Hours'),
+                     _('Approval Rate'), _('Late Entries')])
                 for mi, m in enumerate(proj['members'], 1):
                     writer.writerow(
                         ['', mi, m['name'], m['task_count'], m['hours'],
@@ -1059,16 +1068,16 @@ class TaskManagementTask(models.Model):
                     float(m['hours']) for m in proj['members'])
                 total_late = sum(m['late_entries'] for m in proj['members'])
                 writer.writerow(
-                    ['', '', 'TOTAL', total_tasks, f'{total_hours:.2f}',
+                    ['', '', _('TOTAL'), total_tasks, f'{total_hours:.2f}',
                      '', total_late])
                 writer.writerow([])
 
             # -- Phases --
             if proj.get('phases'):
-                writer.writerow(['', 'PROJECT PHASES'])
+                writer.writerow(['', _('PROJECT PHASES')])
                 writer.writerow(
-                    ['', 'No.', 'Phase', 'Weight',
-                     'Completion', 'Contribution'])
+                    ['', _('No.'), _('Phase'), _('Weight'),
+                     _('Completion'), _('Contribution')])
                 for pi, p in enumerate(proj['phases'], 1):
                     writer.writerow(
                         ['', pi, p['name'], f'{p["percentage"]:.1f}%',
@@ -1082,7 +1091,7 @@ class TaskManagementTask(models.Model):
 
         # -- Footer --
         writer.writerow(SEP)
-        writer.writerow(['END OF REPORT'])
+        writer.writerow([_('END OF REPORT')])
 
         csv_data = output.getvalue().encode('utf-8-sig')
         return {
@@ -1134,19 +1143,19 @@ class TaskManagementTask(models.Model):
             phase_section = ''
             if phase_rows:
                 phase_section = f'''
-                <h3>Phases</h3>
+                <h3>{_("Phases")}</h3>
                 <table><thead><tr>
-                    <th>Phase</th><th>Weight</th>
-                    <th>Completion</th><th>Contribution</th>
+                    <th>{_("Phase")}</th><th>{_("Weight")}</th>
+                    <th>{_("Completion")}</th><th>{_("Contribution")}</th>
                 </tr></thead><tbody>{phase_rows}</tbody></table>'''
 
             member_section = ''
             if member_rows:
                 member_section = f'''
-                <h3>Team Members</h3>
+                <h3>{_("Team Members")}</h3>
                 <table><thead><tr>
-                    <th>Member</th><th>Tasks</th><th>Hours</th>
-                    <th>Approval Rate</th><th>Late</th>
+                    <th>{_("Member")}</th><th>{_("Tasks")}</th><th>{_("Hours")}</th>
+                    <th>{_("Approval Rate")}</th><th>{_("Late")}</th>
                 </tr></thead><tbody>{member_rows}</tbody></table>'''
 
             project_cards += f'''
@@ -1155,38 +1164,42 @@ class TaskManagementTask(models.Model):
                     <span class="project-name">{proj["name"]}</span>
                     <span class="status-badge"
                           style="background:{status_color}">
-                        {proj["status"].upper()}</span>
+                        {proj["status_display"]}</span>
                 </div>
                 <div class="kpi-grid">
                     <div class="kpi">
                         <div class="kpi-value">{proj["progress"]}%</div>
-                        <div class="kpi-label">Progress</div></div>
+                        <div class="kpi-label">{_("Progress")}</div></div>
                     <div class="kpi">
                         <div class="kpi-value">{proj["logged_hours"]}</div>
-                        <div class="kpi-label">Hours</div></div>
+                        <div class="kpi-label">{_("Hours")}</div></div>
                     <div class="kpi">
                         <div class="kpi-value"
                              style="color:#f0ad4e">{proj["pending_tasks"]}</div>
-                        <div class="kpi-label">Pending</div></div>
+                        <div class="kpi-label">{_("Pending")}</div></div>
                     <div class="kpi">
                         <div class="kpi-value"
                              style="color:#5cb85c">{proj.get("approved_tasks", 0)}</div>
-                        <div class="kpi-label">Approved</div></div>
+                        <div class="kpi-label">{_("Approved")}</div></div>
                     <div class="kpi">
                         <div class="kpi-value"
                              style="color:#d9534f">{proj.get("rejected_tasks", 0)}</div>
-                        <div class="kpi-label">Rejected</div></div>
+                        <div class="kpi-label">{_("Rejected")}</div></div>
                     <div class="kpi">
                         <div class="kpi-value"
                              style="color:#17a2b8">{proj.get("assigned_tasks", 0)}</div>
-                        <div class="kpi-label">Assigned</div></div>
+                        <div class="kpi-label">{_("Assigned")}</div></div>
                 </div>
                 {member_section}
                 {phase_section}
             </div>'''
 
+        is_rtl = self.env.lang and self.env.lang.startswith('ar')
+        dir_attr = ' dir="rtl"' if is_rtl else ''
+        th_align = 'right' if is_rtl else 'left'
+
         html = f'''<!DOCTYPE html>
-<html><head><meta charset="utf-8"/>
+<html{dir_attr}><head><meta charset="utf-8"/>
 <style>
     body {{ font-family: Arial, sans-serif; margin: 20px; background: #fff; }}
     .header {{ display: flex; align-items: center; gap: 15px;
@@ -1211,7 +1224,7 @@ class TaskManagementTask(models.Model):
     .kpi-label {{ font-size: 9px; color: #666; text-transform: uppercase; }}
     table {{ width: 100%; border-collapse: collapse; margin-top: 6px; }}
     th {{ background: #0B3D91; color: #fff; padding: 6px 8px;
-          text-align: left; font-size: 11px; }}
+          text-align: {th_align}; font-size: 11px; }}
     td {{ padding: 5px 8px; border-bottom: 1px solid #ddd; font-size: 11px; }}
     tr:nth-child(even) {{ background: #E8EEF7; }}
     .footer {{ margin-top: 20px; padding-top: 8px; border-top: 1px solid #ddd;
@@ -1220,12 +1233,12 @@ class TaskManagementTask(models.Model):
     <div class="header">
         {logo_html}
         <div>
-            <h1>PM Dashboard Report</h1>
-            <p>{company.name} | Generated: {today}</p>
+            <h1>{_("PM Dashboard Report")}</h1>
+            <p>{company.name} | {_("Generated:")} {today}</p>
         </div>
     </div>
     {project_cards}
-    <div class="footer">Generated by {company.name} | PM Dashboard | {today}</div>
+    <div class="footer">{_("Generated by")} {company.name} | {_("PM Dashboard")} | {today}</div>
 </body></html>'''
 
         return html
@@ -1259,31 +1272,31 @@ class TaskManagementTask(models.Model):
         writer = csv.writer(output)
 
         # -- Report Header --
-        writer.writerow(['MANAGER DASHBOARD REPORT'])
+        writer.writerow([_('MANAGER DASHBOARD REPORT')])
         writer.writerow([])
-        writer.writerow(['Company:', company])
-        writer.writerow(['Report Date:', str(today)])
+        writer.writerow([_('Company:'), company])
+        writer.writerow([_('Report Date:'), str(today)])
         writer.writerow([])
 
         # -- Organization Summary --
-        writer.writerow(['ORGANIZATION SUMMARY'])
+        writer.writerow([_('ORGANIZATION SUMMARY')])
         writer.writerow([])
-        writer.writerow(['', 'Metric', 'Value'])
-        writer.writerow(['', 'Total Projects', data['totalProjects']])
-        writer.writerow(['', 'Total Members', data['totalMembers']])
-        writer.writerow(['', 'Total Logged Hours', data['totalHours']])
-        writer.writerow(['', 'Total Late Entries', data['totalLateEntries']])
+        writer.writerow(['', _('Metric'), _('Value')])
+        writer.writerow(['', _('Total Projects'), data['totalProjects']])
+        writer.writerow(['', _('Total Members'), data['totalMembers']])
+        writer.writerow(['', _('Total Logged Hours'), data['totalHours']])
+        writer.writerow(['', _('Total Late Entries'), data['totalLateEntries']])
         writer.writerow([])
 
         # -- All Projects --
-        writer.writerow(['ALL PROJECTS'])
+        writer.writerow([_('ALL PROJECTS')])
         writer.writerow([])
         writer.writerow(
-            ['No.', 'Project', 'Status', 'Progress',
-             'Tasks', 'Pending',
-             'Approved',
-             'Rejected',
-             'Members', 'Late Entries'])
+            [_('No.'), _('Project'), _('Status'), _('Progress'),
+             _('Tasks'), _('Pending'),
+             _('Approved'),
+             _('Rejected'),
+             _('Members'), _('Late Entries')])
         total_tasks = 0
         total_pending = 0
         total_late = 0
@@ -1305,12 +1318,12 @@ class TaskManagementTask(models.Model):
             total_late += proj['late_entries']
         writer.writerow([])
         writer.writerow(
-            ['', 'TOTAL', '', '',
+            ['', _('TOTAL'), '', '',
              total_tasks, total_pending, '', total_late])
         writer.writerow([])
 
         # -- Footer --
-        writer.writerow(['END OF REPORT'])
+        writer.writerow([_('END OF REPORT')])
 
         csv_data = output.getvalue().encode('utf-8-sig')
         return {
@@ -1342,7 +1355,7 @@ class TaskManagementTask(models.Model):
             project_rows += (
                 f'<tr><td>{proj["name"]}</td>'
                 f'<td style="color:{status_color};font-weight:bold;">'
-                f'{proj["status"].upper()}</td>'
+                f'{proj["status_display"]}</td>'
                 f'<td>{proj["progress"]}%</td>'
                 f'<td>{proj["task_count"]}</td>'
                 f'<td>{proj["pending_tasks"]}</td>'
@@ -1351,8 +1364,12 @@ class TaskManagementTask(models.Model):
                 f'<td>{proj["member_count"]}</td>'
                 f'<td>{proj["late_entries"]}</td></tr>')
 
+        is_rtl = self.env.lang and self.env.lang.startswith('ar')
+        dir_attr = ' dir="rtl"' if is_rtl else ''
+        th_align = 'right' if is_rtl else 'left'
+
         html = f'''<!DOCTYPE html>
-<html><head><meta charset="utf-8"/>
+<html{dir_attr}><head><meta charset="utf-8"/>
 <style>
     body {{ font-family: Arial, sans-serif; margin: 20px; background: #fff; }}
     .header {{ display: flex; align-items: center; gap: 15px;
@@ -1369,7 +1386,7 @@ class TaskManagementTask(models.Model):
           border-bottom: 2px solid #0B3D91; padding-bottom: 5px; }}
     table {{ width: 100%; border-collapse: collapse; margin-top: 8px; }}
     th {{ background: #0B3D91; color: #fff; padding: 8px;
-          text-align: left; font-size: 12px; }}
+          text-align: {th_align}; font-size: 12px; }}
     td {{ padding: 6px 8px; border-bottom: 1px solid #ddd; font-size: 12px; }}
     tr:nth-child(even) {{ background: #E8EEF7; }}
     .footer {{ margin-top: 20px; padding-top: 8px; border-top: 1px solid #ddd;
@@ -1378,38 +1395,38 @@ class TaskManagementTask(models.Model):
     <div class="header">
         {logo_html}
         <div>
-            <h1>Manager Dashboard Report</h1>
-            <p>{company.name} | Generated: {today}</p>
+            <h1>{_("Manager Dashboard Report")}</h1>
+            <p>{company.name} | {_("Generated:")} {today}</p>
         </div>
     </div>
 
     <div class="kpi-grid">
         <div class="kpi">
             <div class="kpi-value">{data["totalProjects"]}</div>
-            <div class="kpi-label">Total Projects</div></div>
+            <div class="kpi-label">{_("Total Projects")}</div></div>
         <div class="kpi">
             <div class="kpi-value" style="color:#5cb85c">
                 {data["totalMembers"]}</div>
-            <div class="kpi-label">Total Members</div></div>
+            <div class="kpi-label">{_("Total Members")}</div></div>
         <div class="kpi">
             <div class="kpi-value">{data["totalHours"]}</div>
-            <div class="kpi-label">Total Hours</div></div>
+            <div class="kpi-label">{_("Total Hours")}</div></div>
         <div class="kpi">
             <div class="kpi-value" style="color:#d9534f">
                 {data["totalLateEntries"]}</div>
-            <div class="kpi-label">Late Entries</div></div>
+            <div class="kpi-label">{_("Late Entries")}</div></div>
     </div>
 
-    <h2>All Projects</h2>
+    <h2>{_("All Projects")}</h2>
     <table><thead><tr>
-        <th>Project</th><th>Status</th><th>Progress</th>
-        <th>Tasks</th><th>Pending</th>
-        <th>Approved</th>
-        <th>Rejected</th>
-        <th>Members</th><th>Late</th>
+        <th>{_("Project")}</th><th>{_("Status")}</th><th>{_("Progress")}</th>
+        <th>{_("Tasks")}</th><th>{_("Pending")}</th>
+        <th>{_("Approved")}</th>
+        <th>{_("Rejected")}</th>
+        <th>{_("Members")}</th><th>{_("Late")}</th>
     </tr></thead><tbody>{project_rows}</tbody></table>
 
-    <div class="footer">Generated by {company.name} | Manager Dashboard | {today}</div>
+    <div class="footer">{_("Generated by")} {company.name} | {_("Manager Dashboard")} | {today}</div>
 </body></html>'''
 
         return html

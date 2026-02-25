@@ -226,6 +226,15 @@ class ProjectPerformanceReport(models.TransientModel):
                 }))
             report.phase_line_ids = phase_lines or PhaseLine
 
+    def _get_selection_labels(self):
+        """Get translated selection labels for task_type and approval_status."""
+        Task = self.env['task.management.task']
+        fget = Task.fields_get(['task_type', 'approval_status'])
+        return (
+            dict(fget['task_type']['selection']),
+            dict(fget['approval_status']['selection']),
+        )
+
     def action_export_csv(self):
         """Export the full project report as CSV."""
         self.ensure_one()
@@ -239,44 +248,44 @@ class ProjectPerformanceReport(models.TransientModel):
         output = io.StringIO()
         writer = csv.writer(output)
         company = self.env.company.name
-        period_str = (f'{d_from}  to  {d_to}' if d_from else 'All Time')
+        period_str = (f'{d_from}  {_("to")}  {d_to}' if d_from else _('All Time'))
 
         # -- Report Header --
-        writer.writerow(['PROJECT PERFORMANCE REPORT'])
+        writer.writerow([_('PROJECT PERFORMANCE REPORT')])
         writer.writerow([])
-        writer.writerow(['Company:', company])
-        writer.writerow(['Project:', self.project_id.name])
-        writer.writerow(['Status:', self.project_status.replace(
+        writer.writerow([_('Company:'), company])
+        writer.writerow([_('Project:'), self.project_id.name])
+        writer.writerow([_('Status:'), self.project_status.replace(
             '_', ' ').title()])
-        writer.writerow(['Period:', period_str])
+        writer.writerow([_('Period:'), period_str])
         writer.writerow([])
 
         # -- Project Summary --
-        writer.writerow(['PROJECT SUMMARY'])
+        writer.writerow([_('PROJECT SUMMARY')])
         writer.writerow([])
-        writer.writerow(['', 'Metric', 'Value'])
-        writer.writerow(['', 'Phases', self.phase_count])
-        writer.writerow(['', 'Total Tasks', self.total_tasks])
-        writer.writerow(['', 'Approved', self.approved_tasks])
-        writer.writerow(['', 'Rejected', self.rejected_tasks])
-        writer.writerow(['', 'Pending', self.pending_tasks])
-        writer.writerow(['', 'Total Hours', f'{self.total_hours:.2f}'])
-        writer.writerow(['', 'Approved Hours',
+        writer.writerow(['', _('Metric'), _('Value')])
+        writer.writerow(['', _('Phases'), self.phase_count])
+        writer.writerow(['', _('Total Tasks'), self.total_tasks])
+        writer.writerow(['', _('Approved'), self.approved_tasks])
+        writer.writerow(['', _('Rejected'), self.rejected_tasks])
+        writer.writerow(['', _('Pending'), self.pending_tasks])
+        writer.writerow(['', _('Total Hours'), f'{self.total_hours:.2f}'])
+        writer.writerow(['', _('Approved Hours'),
                           f'{self.approved_hours:.2f}'])
-        writer.writerow(['', 'Approval Rate',
+        writer.writerow(['', _('Approval Rate'),
                           f'{self.approval_rate:.1f}%'])
-        writer.writerow(['', 'Progress', f'{self.progress:.1f}%'])
-        writer.writerow(['', 'Late Entries', self.late_entries])
-        writer.writerow(['', 'Active Members', self.member_count])
+        writer.writerow(['', _('Progress'), f'{self.progress:.1f}%'])
+        writer.writerow(['', _('Late Entries'), self.late_entries])
+        writer.writerow(['', _('Active Members'), self.member_count])
         writer.writerow([])
 
         # -- Member Breakdown --
-        writer.writerow(['MEMBER BREAKDOWN'])
+        writer.writerow([_('MEMBER BREAKDOWN')])
         writer.writerow([])
         writer.writerow([
-            '', 'No.', 'Member', 'Role', 'Tasks', 'Total Hours',
-            'Approved Hours', 'Approval Rate', 'Pending', 'Rejected',
-            'Late Entries', 'Avg Hours/Day',
+            '', _('No.'), _('Member'), _('Role'), _('Tasks'), _('Total Hours'),
+            _('Approved Hours'), _('Approval Rate'), _('Pending'), _('Rejected'),
+            _('Late Entries'), _('Avg Hours/Day'),
         ])
         g_tasks = 0
         g_hrs = 0.0
@@ -310,17 +319,17 @@ class ProjectPerformanceReport(models.TransientModel):
             g_hrs += m_total_hrs
             g_app_hrs += m_approved_hrs
             g_late += len(m_late)
-        writer.writerow(['', '', 'TOTAL', '', g_tasks,
+        writer.writerow(['', '', _('TOTAL'), '', g_tasks,
                           f'{g_hrs:.2f}', f'{g_app_hrs:.2f}',
                           '', '', '', g_late, ''])
         writer.writerow([])
 
         # -- Phase Breakdown --
         if self.phase_line_ids:
-            writer.writerow(['PHASE BREAKDOWN'])
+            writer.writerow([_('PHASE BREAKDOWN')])
             writer.writerow([])
-            writer.writerow(['', 'No.', 'Phase', 'Weight',
-                              'Completion', 'Contribution'])
+            writer.writerow(['', _('No.'), _('Phase'), _('Weight'),
+                              _('Completion'), _('Contribution')])
             for pi, phase in enumerate(self.phase_line_ids, 1):
                 writer.writerow([
                     '', pi, phase.phase_name,
@@ -331,12 +340,13 @@ class ProjectPerformanceReport(models.TransientModel):
             writer.writerow([])
 
         # -- Task Details --
-        writer.writerow(['ALL TASKS'])
+        writer.writerow([_('ALL TASKS')])
         writer.writerow([])
         writer.writerow([
-            '', 'No.', 'Date', 'Member', 'Description', 'From', 'To',
-            'Hours', 'Task Type', 'Status', 'Late', 'Manager Comment',
+            '', _('No.'), _('Date'), _('Member'), _('Description'), _('From'), _('To'),
+            _('Hours'), _('Task Type'), _('Status'), _('Late'), _('Manager Comment'),
         ])
+        type_map, status_map = self._get_selection_labels()
         total_hrs = 0.0
         for i, task in enumerate(tasks, 1):
             writer.writerow([
@@ -345,16 +355,16 @@ class ProjectPerformanceReport(models.TransientModel):
                 self._float_to_time(task.time_from),
                 self._float_to_time(task.time_to),
                 f'{task.duration_hours:.2f}',
-                task.task_type.title(),
-                task.approval_status.replace('_', ' ').title(),
-                'Yes' if task.is_late_entry else '',
+                type_map.get(task.task_type, task.task_type),
+                status_map.get(task.approval_status, task.approval_status),
+                _('Yes') if task.is_late_entry else '',
                 (task.manager_comment or '')[:50],
             ])
             total_hrs += task.duration_hours
-        writer.writerow(['', '', '', '', 'TOTAL', '', '',
+        writer.writerow(['', '', '', '', _('TOTAL'), '', '',
                           f'{total_hrs:.2f}', '', '', '', ''])
         writer.writerow([])
-        writer.writerow(['END OF REPORT'])
+        writer.writerow([_('END OF REPORT')])
 
         csv_data = output.getvalue().encode('utf-8-sig')
         self.report_file = base64.b64encode(csv_data)
@@ -383,7 +393,7 @@ class ProjectPerformanceReport(models.TransientModel):
         tasks = self._get_tasks()
         d_from, d_to = self._get_date_range()
         members = tasks.mapped('member_id')
-        period_str = f'{d_from} to {d_to}' if d_from else 'All Time'
+        period_str = f'{d_from} {_("to")} {d_to}' if d_from else _('All Time')
 
         # Build member breakdown rows
         member_rows = ''
@@ -407,6 +417,7 @@ class ProjectPerformanceReport(models.TransientModel):
             </tr>'''
 
         # Build task detail rows
+        type_map, status_map = self._get_selection_labels()
         task_rows = ''
         total_hours = 0
         for task in tasks:
@@ -423,10 +434,10 @@ class ProjectPerformanceReport(models.TransientModel):
                 <td>{self._float_to_time(task.time_from)}</td>
                 <td>{self._float_to_time(task.time_to)}</td>
                 <td>{task.duration_hours:.2f}</td>
-                <td style="color:{type_color};font-weight:bold;">{task.task_type.title()}</td>
+                <td style="color:{type_color};font-weight:bold;">{type_map.get(task.task_type, task.task_type)}</td>
                 <td style="color:{status_color};font-weight:bold;">
-                    {task.approval_status.replace('_', ' ').title()}</td>
-                <td>{"Yes" if task.is_late_entry else ""}</td>
+                    {status_map.get(task.approval_status, task.approval_status)}</td>
+                <td>{_("Yes") if task.is_late_entry else ""}</td>
             </tr>'''
             total_hours += task.duration_hours
 
@@ -447,8 +458,12 @@ class ProjectPerformanceReport(models.TransientModel):
             logo_b64 = company.logo.decode() if isinstance(company.logo, bytes) else company.logo
             logo_html = f'<img src="data:image/png;base64,{logo_b64}" class="logo"/>'
 
+        is_rtl = self.env.lang and self.env.lang.startswith('ar')
+        dir_attr = ' dir="rtl"' if is_rtl else ''
+        th_align = 'right' if is_rtl else 'left'
+
         html = f'''<!DOCTYPE html>
-<html><head><meta charset="utf-8"/>
+<html{dir_attr}><head><meta charset="utf-8"/>
 <style>
     body {{ font-family: Arial, sans-serif; margin: 20px; background: #fff; }}
     .header {{ display: flex; align-items: center; gap: 15px;
@@ -465,7 +480,7 @@ class ProjectPerformanceReport(models.TransientModel):
     .kpi-value {{ font-size: 20px; font-weight: bold; color: #0B3D91; }}
     .kpi-label {{ font-size: 10px; color: #666; text-transform: uppercase; }}
     table {{ width: 100%; border-collapse: collapse; margin-top: 10px; }}
-    th {{ background: #0B3D91; color: white; padding: 8px; text-align: left; font-size: 12px; }}
+    th {{ background: #0B3D91; color: white; padding: 8px; text-align: {th_align}; font-size: 12px; }}
     td {{ padding: 6px 8px; border-bottom: 1px solid #ddd; font-size: 12px; }}
     tr:nth-child(even) {{ background: #f9f9f9; }}
     .total {{ font-weight: bold; margin-top: 10px; font-size: 14px; color: #0B3D91; }}
@@ -475,55 +490,55 @@ class ProjectPerformanceReport(models.TransientModel):
     <div class="header">
         {logo_html}
         <div class="header-text">
-            <h1>Project Performance Report</h1>
-            <p>{company.name} | {self.project_id.name} | {period_str} | Status: {self.project_status}</p>
+            <h1>{_("Project Performance Report")}</h1>
+            <p>{company.name} | {self.project_id.name} | {period_str} | {_("Status:")} {self.project_status}</p>
         </div>
     </div>
 
     <div class="kpi-grid">
         <div class="kpi"><div class="kpi-value">{self.total_tasks}</div>
-            <div class="kpi-label">Total Tasks</div></div>
+            <div class="kpi-label">{_("Total Tasks")}</div></div>
         <div class="kpi"><div class="kpi-value" style="color:#5cb85c">
             {self.approved_tasks}</div>
-            <div class="kpi-label">Approved</div></div>
+            <div class="kpi-label">{_("Approved")}</div></div>
         <div class="kpi"><div class="kpi-value" style="color:#d9534f">
             {self.rejected_tasks}</div>
-            <div class="kpi-label">Rejected</div></div>
+            <div class="kpi-label">{_("Rejected")}</div></div>
         <div class="kpi"><div class="kpi-value" style="color:#f0ad4e">
             {self.pending_tasks}</div>
-            <div class="kpi-label">Pending</div></div>
+            <div class="kpi-label">{_("Pending")}</div></div>
         <div class="kpi"><div class="kpi-value">{self.phase_count}</div>
-            <div class="kpi-label">Phases</div></div>
+            <div class="kpi-label">{_("Phases")}</div></div>
         <div class="kpi"><div class="kpi-value">{self.progress:.1f}%</div>
-            <div class="kpi-label">Progress</div></div>
+            <div class="kpi-label">{_("Progress")}</div></div>
         <div class="kpi"><div class="kpi-value">{self.approval_rate:.1f}%</div>
-            <div class="kpi-label">Approval Rate</div></div>
+            <div class="kpi-label">{_("Approval Rate")}</div></div>
         <div class="kpi"><div class="kpi-value">{self.approved_hours:.1f}</div>
-            <div class="kpi-label">Approved Hours</div></div>
+            <div class="kpi-label">{_("Approved Hours")}</div></div>
         <div class="kpi"><div class="kpi-value" style="color:#d9534f">
             {self.late_entries}</div>
-            <div class="kpi-label">Late Entries</div></div>
+            <div class="kpi-label">{_("Late Entries")}</div></div>
     </div>
 
-    <h2>Member Breakdown</h2>
+    <h2>{_("Member Breakdown")}</h2>
     <table><thead><tr>
-        <th>Member</th><th>Tasks</th><th>Total Hours</th>
-        <th>Approved Hours</th><th>Approval Rate</th><th>Late</th>
+        <th>{_("Member")}</th><th>{_("Tasks")}</th><th>{_("Total Hours")}</th>
+        <th>{_("Approved Hours")}</th><th>{_("Approval Rate")}</th><th>{_("Late")}</th>
     </tr></thead><tbody>{member_rows}</tbody></table>
 
-    <h2>Phase Breakdown</h2>
+    <h2>{_("Phase Breakdown")}</h2>
     <table><thead><tr>
-        <th>Phase</th><th>Weight (%)</th><th>Completion (%)</th>
-        <th>Contribution (%)</th>
+        <th>{_("Phase")}</th><th>{_("Weight (%)")}</th><th>{_("Completion (%)")}</th>
+        <th>{_("Contribution (%)")}</th>
     </tr></thead><tbody>{phase_rows}</tbody></table>
 
-    <h2>Task Details</h2>
+    <h2>{_("Task Details")}</h2>
     <table><thead><tr>
-        <th>Date</th><th>Member</th><th>Description</th>
-        <th>From</th><th>To</th><th>Hours</th><th>Type</th><th>Status</th><th>Late</th>
+        <th>{_("Date")}</th><th>{_("Member")}</th><th>{_("Description")}</th>
+        <th>{_("From")}</th><th>{_("To")}</th><th>{_("Hours")}</th><th>{_("Type")}</th><th>{_("Status")}</th><th>{_("Late")}</th>
     </tr></thead><tbody>{task_rows}</tbody></table>
-    <div class="total">Total Hours: {total_hours:.2f}</div>
-    <div class="footer">Generated by {company.name} | Project Performance Report | {fields.Date.context_today(self)}</div>
+    <div class="total">{_("Total Hours:")} {total_hours:.2f}</div>
+    <div class="footer">{_("Generated by")} {company.name} | {_("Project Performance Report")} | {fields.Date.context_today(self)}</div>
 </body></html>'''
 
         try:
@@ -576,7 +591,7 @@ class ProjectPerformanceReport(models.TransientModel):
         tasks = self._get_tasks()
         d_from, d_to = self._get_date_range()
         members = tasks.mapped('member_id')
-        period_str = f'{d_from} to {d_to}' if d_from else 'All Time'
+        period_str = f'{d_from} {_("to")} {d_to}' if d_from else _('All Time')
 
         # Build member breakdown rows
         member_rows = ''
@@ -600,6 +615,7 @@ class ProjectPerformanceReport(models.TransientModel):
             </tr>'''
 
         # Build task detail rows
+        type_map, status_map = self._get_selection_labels()
         task_rows = ''
         total_hours = 0
         for task in tasks:
@@ -616,10 +632,10 @@ class ProjectPerformanceReport(models.TransientModel):
                 <td>{self._float_to_time(task.time_from)}</td>
                 <td>{self._float_to_time(task.time_to)}</td>
                 <td>{task.duration_hours:.2f}</td>
-                <td style="color:{type_color};font-weight:bold;">{task.task_type.title()}</td>
+                <td style="color:{type_color};font-weight:bold;">{type_map.get(task.task_type, task.task_type)}</td>
                 <td style="color:{status_color};font-weight:bold;">
-                    {task.approval_status.replace('_', ' ').title()}</td>
-                <td>{"Yes" if task.is_late_entry else ""}</td>
+                    {status_map.get(task.approval_status, task.approval_status)}</td>
+                <td>{_("Yes") if task.is_late_entry else ""}</td>
             </tr>'''
             total_hours += task.duration_hours
 
@@ -640,8 +656,12 @@ class ProjectPerformanceReport(models.TransientModel):
             logo_b64 = company.logo.decode() if isinstance(company.logo, bytes) else company.logo
             logo_html = f'<img src="data:image/png;base64,{logo_b64}" class="logo"/>'
 
+        is_rtl = self.env.lang and self.env.lang.startswith('ar')
+        dir_attr = ' dir="rtl"' if is_rtl else ''
+        th_align = 'right' if is_rtl else 'left'
+
         html = f'''<!DOCTYPE html>
-<html><head><meta charset="utf-8"/>
+<html{dir_attr}><head><meta charset="utf-8"/>
 <style>
     body {{ font-family: Arial, sans-serif; margin: 20px; background: #fff; }}
     .header {{ display: flex; align-items: center; gap: 15px;
@@ -657,7 +677,7 @@ class ProjectPerformanceReport(models.TransientModel):
     .kpi-value {{ font-size: 20px; font-weight: bold; color: #0B3D91; }}
     .kpi-label {{ font-size: 10px; color: #666; text-transform: uppercase; }}
     table {{ width: 100%; border-collapse: collapse; margin-top: 10px; }}
-    th {{ background: #0B3D91; color: white; padding: 8px; text-align: left; font-size: 12px; }}
+    th {{ background: #0B3D91; color: white; padding: 8px; text-align: {th_align}; font-size: 12px; }}
     td {{ padding: 6px 8px; border-bottom: 1px solid #ddd; font-size: 12px; }}
     tr:nth-child(even) {{ background: #f9f9f9; }}
     .total {{ font-weight: bold; margin-top: 10px; font-size: 14px; color: #0B3D91; }}
@@ -667,55 +687,55 @@ class ProjectPerformanceReport(models.TransientModel):
     <div class="header">
         {logo_html}
         <div class="header-text">
-            <h1>Project Performance Report</h1>
-            <p>{company.name} | {self.project_id.name} | {period_str} | Status: {self.project_status}</p>
+            <h1>{_("Project Performance Report")}</h1>
+            <p>{company.name} | {self.project_id.name} | {period_str} | {_("Status:")} {self.project_status}</p>
         </div>
     </div>
 
     <div class="kpi-grid">
         <div class="kpi"><div class="kpi-value">{self.total_tasks}</div>
-            <div class="kpi-label">Total Tasks</div></div>
+            <div class="kpi-label">{_("Total Tasks")}</div></div>
         <div class="kpi"><div class="kpi-value" style="color:#5cb85c">
             {self.approved_tasks}</div>
-            <div class="kpi-label">Approved</div></div>
+            <div class="kpi-label">{_("Approved")}</div></div>
         <div class="kpi"><div class="kpi-value" style="color:#d9534f">
             {self.rejected_tasks}</div>
-            <div class="kpi-label">Rejected</div></div>
+            <div class="kpi-label">{_("Rejected")}</div></div>
         <div class="kpi"><div class="kpi-value" style="color:#f0ad4e">
             {self.pending_tasks}</div>
-            <div class="kpi-label">Pending</div></div>
+            <div class="kpi-label">{_("Pending")}</div></div>
         <div class="kpi"><div class="kpi-value">{self.phase_count}</div>
-            <div class="kpi-label">Phases</div></div>
+            <div class="kpi-label">{_("Phases")}</div></div>
         <div class="kpi"><div class="kpi-value">{self.progress:.1f}%</div>
-            <div class="kpi-label">Progress</div></div>
+            <div class="kpi-label">{_("Progress")}</div></div>
         <div class="kpi"><div class="kpi-value">{self.approval_rate:.1f}%</div>
-            <div class="kpi-label">Approval Rate</div></div>
+            <div class="kpi-label">{_("Approval Rate")}</div></div>
         <div class="kpi"><div class="kpi-value">{self.approved_hours:.1f}</div>
-            <div class="kpi-label">Approved Hours</div></div>
+            <div class="kpi-label">{_("Approved Hours")}</div></div>
         <div class="kpi"><div class="kpi-value" style="color:#d9534f">
             {self.late_entries}</div>
-            <div class="kpi-label">Late Entries</div></div>
+            <div class="kpi-label">{_("Late Entries")}</div></div>
     </div>
 
-    <h2>Member Breakdown</h2>
+    <h2>{_("Member Breakdown")}</h2>
     <table><thead><tr>
-        <th>Member</th><th>Tasks</th><th>Total Hours</th>
-        <th>Approved Hours</th><th>Approval Rate</th><th>Late</th>
+        <th>{_("Member")}</th><th>{_("Tasks")}</th><th>{_("Total Hours")}</th>
+        <th>{_("Approved Hours")}</th><th>{_("Approval Rate")}</th><th>{_("Late")}</th>
     </tr></thead><tbody>{member_rows}</tbody></table>
 
-    <h2>Phase Breakdown</h2>
+    <h2>{_("Phase Breakdown")}</h2>
     <table><thead><tr>
-        <th>Phase</th><th>Weight (%)</th><th>Completion (%)</th>
-        <th>Contribution (%)</th>
+        <th>{_("Phase")}</th><th>{_("Weight (%)")}</th><th>{_("Completion (%)")}</th>
+        <th>{_("Contribution (%)")}</th>
     </tr></thead><tbody>{phase_rows}</tbody></table>
 
-    <h2>Task Details</h2>
+    <h2>{_("Task Details")}</h2>
     <table><thead><tr>
-        <th>Date</th><th>Member</th><th>Description</th>
-        <th>From</th><th>To</th><th>Hours</th><th>Type</th><th>Status</th><th>Late</th>
+        <th>{_("Date")}</th><th>{_("Member")}</th><th>{_("Description")}</th>
+        <th>{_("From")}</th><th>{_("To")}</th><th>{_("Hours")}</th><th>{_("Type")}</th><th>{_("Status")}</th><th>{_("Late")}</th>
     </tr></thead><tbody>{task_rows}</tbody></table>
-    <div class="total">Total Hours: {total_hours:.2f}</div>
-    <div class="footer">Generated by {company.name} | Project Performance Report | {fields.Date.context_today(self)}</div>
+    <div class="total">{_("Total Hours:")} {total_hours:.2f}</div>
+    <div class="footer">{_("Generated by")} {company.name} | {_("Project Performance Report")} | {fields.Date.context_today(self)}</div>
 </body></html>'''
 
         try:

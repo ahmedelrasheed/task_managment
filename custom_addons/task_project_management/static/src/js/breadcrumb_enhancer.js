@@ -3,13 +3,14 @@
 import { ControlPanel } from "@web/search/control_panel/control_panel";
 import { patch } from "@web/core/utils/patch";
 import { useService } from "@web/core/utils/hooks";
+import { _t } from "@web/core/l10n/translation";
 import { onMounted, onPatched } from "@odoo/owl";
 
 // Models whose form breadcrumb should show a fixed label instead of record name
 const FORM_BREADCRUMB_LABELS = {
-    'task.management.project': 'Project Report',
-    'task.management.member.performance.report': 'Member Performance Report',
-    'task.management.project.performance.report': 'Project Performance Report',
+    'task.management.project': _t('Project Report'),
+    'task.management.member.performance.report': _t('Member Performance Report'),
+    'task.management.project.performance.report': _t('Project Performance Report'),
 };
 
 // Models where the "New" button should be hidden for non-admin users

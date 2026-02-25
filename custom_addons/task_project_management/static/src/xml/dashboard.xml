@@ -225,7 +225,7 @@
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0" t-esc="project.name"/>
                             <span t-attf-class="badge #{project.status === 'active' ? 'text-bg-success' : project.status === 'waiting' ? 'text-bg-danger' : 'text-bg-warning'}"
-                                  t-esc="project.status"/>
+                                  t-esc="project.status_display || project.status"/>
                         </div>
                         <div class="card-body">
                             <div class="row mb-3">
@@ -428,7 +428,7 @@
                                                 <td t-esc="project.name"/>
                                                 <td>
                                                     <span t-attf-class="badge #{project.status === 'active' ? 'text-bg-success' : project.status === 'on_hold' ? 'text-bg-warning' : project.status === 'completed' ? 'text-bg-info' : project.status === 'waiting' ? 'text-bg-danger' : 'text-bg-secondary'}"
-                                                          t-esc="project.status"/>
+                                                          t-esc="project.status_display || project.status"/>
                                                 </td>
                                                 <td>
                                                     <div class="progress" style="height: 20px; min-width: 100px;">

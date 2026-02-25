@@ -53,17 +53,17 @@ class ExportReportWizard(models.TransientModel):
         company = self.env.company.name
 
         # ── Report Header ──
-        writer.writerow(['TASK REPORT'])
+        writer.writerow([_('TASK REPORT')])
         writer.writerow([])
-        writer.writerow(['Company:', company])
-        writer.writerow(['Period:', f'{self.date_from}  to  {self.date_to}'])
+        writer.writerow([_('Company:'), company])
+        writer.writerow([_('Period:'), f'{self.date_from}  {_("to")}  {self.date_to}'])
         if self.project_id:
-            writer.writerow(['Project:', self.project_id.name])
+            writer.writerow([_('Project:'), self.project_id.name])
         if self.member_id:
-            writer.writerow(['Member:', self.member_id.name])
-        writer.writerow(['Total Tasks:', len(tasks)])
+            writer.writerow([_('Member:'), self.member_id.name])
+        writer.writerow([_('Total Tasks:'), len(tasks)])
         total_hours = sum(tasks.mapped('duration_hours'))
-        writer.writerow(['Total Hours:', f'{total_hours:.2f}'])
+        writer.writerow([_('Total Hours:'), f'{total_hours:.2f}'])
         writer.writerow([])
 
         # ── Summary by Status ──
@@ -72,28 +72,31 @@ class ExportReportWizard(models.TransientModel):
         rejected = tasks.filtered(lambda t: t.approval_status == 'rejected')
         assigned = tasks.filtered(lambda t: t.approval_status == 'assigned')
         late = tasks.filtered(lambda t: t.is_late_entry)
-        writer.writerow(['STATUS SUMMARY'])
+        writer.writerow([_('STATUS SUMMARY')])
         writer.writerow([])
-        writer.writerow(['', 'Status', 'Count', 'Hours'])
-        writer.writerow(['', 'Approved', len(approved),
+        writer.writerow(['', _('Status'), _('Count'), _('Hours')])
+        writer.writerow(['', _('Approved'), len(approved),
                           f'{sum(approved.mapped("duration_hours")):.2f}'])
-        writer.writerow(['', 'Pending', len(pending),
+        writer.writerow(['', _('Pending'), len(pending),
                           f'{sum(pending.mapped("duration_hours")):.2f}'])
-        writer.writerow(['', 'Rejected', len(rejected),
+        writer.writerow(['', _('Rejected'), len(rejected),
                           f'{sum(rejected.mapped("duration_hours")):.2f}'])
         if assigned:
-            writer.writerow(['', 'Assigned', len(assigned),
+            writer.writerow(['', _('Assigned'), len(assigned),
                               f'{sum(assigned.mapped("duration_hours")):.2f}'])
-        writer.writerow(['', 'Late Entries', len(late), ''])
+        writer.writerow(['', _('Late Entries'), len(late), ''])
         writer.writerow([])
 
         # ── Task Details ──
-        writer.writerow(['TASK DETAILS'])
+        writer.writerow([_('TASK DETAILS')])
         writer.writerow([])
         writer.writerow([
-            'No.', 'Date', 'Project', 'Member', 'Description',
-            'From', 'To', 'Hours', 'Status', 'Late', 'Manager Comment',
+            _('No.'), _('Date'), _('Project'), _('Member'), _('Description'),
+            _('From'), _('To'), _('Hours'), _('Status'), _('Late'), _('Manager Comment'),
         ])
+        Task = self.env['task.management.task']
+        fget = Task.fields_get(['approval_status'])
+        status_map = dict(fget['approval_status']['selection'])
         for i, task in enumerate(tasks, 1):
             writer.writerow([
                 i,
@@ -104,16 +107,16 @@ class ExportReportWizard(models.TransientModel):
                 self._float_to_time(task.time_from),
                 self._float_to_time(task.time_to),
                 f'{task.duration_hours:.2f}',
-                task.approval_status.replace('_', ' ').title(),
-                'Yes' if task.is_late_entry else '',
+                status_map.get(task.approval_status, task.approval_status),
+                _('Yes') if task.is_late_entry else '',
                 task.manager_comment or '',
             ])
         writer.writerow([])
         writer.writerow(
-            ['', '', '', '', 'TOTAL', '', '', f'{total_hours:.2f}',
+            ['', '', '', '', _('TOTAL'), '', '', f'{total_hours:.2f}',
              '', '', ''])
         writer.writerow([])
-        writer.writerow(['END OF REPORT'])
+        writer.writerow([_('END OF REPORT')])
 
         csv_data = output.getvalue().encode('utf-8-sig')
         self.report_file = base64.b64encode(csv_data)
@@ -187,6 +190,9 @@ class ExportReportWizard(models.TransientModel):
 
     def _build_html_report(self, tasks):
         """Build an HTML table for the report."""
+        Task = self.env['task.management.task']
+        fget = Task.fields_get(['approval_status'])
+        status_map = dict(fget['approval_status']['selection'])
         rows = ''
         total_hours = 0
         for task in tasks:
@@ -205,20 +211,24 @@ class ExportReportWizard(models.TransientModel):
                 <td>{self._float_to_time(task.time_to)}</td>
                 <td>{task.duration_hours:.2f}</td>
                 <td style="color: {status_color}; font-weight: bold;">
-                    {task.approval_status.replace('_', ' ').title()}
+                    {status_map.get(task.approval_status, task.approval_status)}
                 </td>
                 <td>{'⚠' if task.is_late_entry else ''}</td>
             </tr>'''
             total_hours += task.duration_hours
 
-        title = 'Task Report'
+        title = _('Task Report')
         if self.project_id:
             title += f' — {self.project_id.name}'
         if self.member_id:
             title += f' — {self.member_id.name}'
 
+        is_rtl = self.env.lang and self.env.lang.startswith('ar')
+        dir_attr = ' dir="rtl"' if is_rtl else ''
+        th_align = 'right' if is_rtl else 'left'
+
         return f'''<!DOCTYPE html>
-<html>
+<html{dir_attr}>
 <head>
 <meta charset="utf-8"/>
 <style>
@@ -226,7 +236,7 @@ class ExportReportWizard(models.TransientModel):
     h1 {{ color: #333; }}
     .meta {{ color: #666; margin-bottom: 20px; }}
     table {{ width: 100%; border-collapse: collapse; margin-top: 10px; }}
-    th {{ background-color: #0B3D91; color: white; padding: 10px; text-align: left; }}
+    th {{ background-color: #0B3D91; color: white; padding: 10px; text-align: {th_align}; }}
     td {{ padding: 8px; border-bottom: 1px solid #ddd; }}
     tr:nth-child(even) {{ background-color: #f9f9f9; }}
     .total {{ font-weight: bold; margin-top: 15px; font-size: 16px; }}
@@ -235,20 +245,20 @@ class ExportReportWizard(models.TransientModel):
 <body>
     <h1>{title}</h1>
     <div class="meta">
-        Period: {self.date_from} to {self.date_to} |
-        Total Tasks: {len(tasks)}
+        {_("Period:")} {self.date_from} {_("to")} {self.date_to} |
+        {_("Total Tasks:")} {len(tasks)}
     </div>
     <table>
         <thead>
             <tr>
-                <th>Date</th><th>Project</th><th>Member</th>
-                <th>Description</th><th>From</th><th>To</th>
-                <th>Hours</th><th>Status</th><th>Late</th>
+                <th>{_("Date")}</th><th>{_("Project")}</th><th>{_("Member")}</th>
+                <th>{_("Description")}</th><th>{_("From")}</th><th>{_("To")}</th>
+                <th>{_("Hours")}</th><th>{_("Status")}</th><th>{_("Late")}</th>
             </tr>
         </thead>
         <tbody>{rows}</tbody>
     </table>
-    <div class="total">Total Hours: {total_hours:.2f}</div>
+    <div class="total">{_("Total Hours:")} {total_hours:.2f}</div>
 </body>
 </html>'''
 
