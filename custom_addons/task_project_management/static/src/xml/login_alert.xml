@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<templates xml:space="preserve">
-    <!-- Invisible systray item - just triggers alert check on load -->
-    <t t-name="task_project_management.LoginAlertService">
-        <div style="display:none;"/>
-    </t>
-</templates>
