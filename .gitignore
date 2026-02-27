@@ -1,18 +1,10 @@
-# Virtual environment
-abdo_env/
+# Ignore everything
+/*
 
-# Odoo source (not part of our module)
-odoo17/
-
-# Odoo config and logs
-odoo17.conf
-odoo17.log
-
-# Claude Code internal
-.claude/
-
-# Project memory (internal notes)
-memory/
+# Allow only the module
+!/my-addons/
+/my-addons/*
+!/my-addons/task_project_management/
 
 # Python
 __pycache__/

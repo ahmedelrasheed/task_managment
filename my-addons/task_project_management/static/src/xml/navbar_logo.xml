@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+    <!-- Add company logo to the navbar -->
+    <t t-inherit="web.NavBar" t-inherit-mode="extension">
+        <xpath expr="//t[@t-call='web.NavBar.AppsMenu']" position="after">
+            <a href="/web#" class="o_company_logo_link d-none d-md-flex align-items-center ms-3 me-3">
+                <img src="/web/binary/company_logo" alt="Company Logo"
+                     class="o_company_logo_navbar"/>
+            </a>
+        </xpath>
+    </t>
+
+</templates>

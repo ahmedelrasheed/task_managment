@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Override Login Layout: full-page branded design -->
+    <template id="login_layout_override" inherit_id="web.login_layout" name="Branded Login Layout">
+        <!-- Replace the entire container -->
+        <xpath expr="//div[hasclass('container')]" position="replace">
+            <div class="container-fluid p-0 d-flex align-items-center justify-content-center" style="min-height: 100vh; background: linear-gradient(135deg, #0B3D91 0%, #1E5BBF 50%, #E8EEF7 100%);">
+                <div class="row w-100 g-0 justify-content-center align-items-center" style="min-height: 100vh;">
+                    <!-- Login card (centered) -->
+                    <div class="col-lg-4 col-md-6 col-11 d-flex align-items-center justify-content-center py-4">
+                        <div class="card border-0 shadow-lg w-100" style="max-width: 400px; border-radius: 16px; overflow: hidden;">
+                            <div class="card-body p-4 p-md-5">
+                                <!-- Logo above Task Management -->
+                                <div class="text-center mb-3">
+                                    <img t-attf-src="/web/binary/company_logo{{ '?dbname='+db if db else '' }}" alt="Logo"
+                                         style="max-height: 100px; max-width: 200px; width: auto;"/>
+                                </div>
+                                <h3 class="text-center fw-bold mb-1" style="color: #0B3D91;">Task Management</h3>
+                                <p class="text-center text-muted mb-4" style="font-size: 0.9rem;">Sign in to your account</p>
+                                <t t-out="0"/>
+                                <div class="text-center small mt-4 pt-3 border-top text-muted" t-if="not disable_footer">
+                                    <t t-if="not disable_database_manager">
+                                        <a class="border-end pe-2 me-1" href="/web/database/manager" style="color: #0B3D91;">Manage Databases</a>
+                                    </t>
+                                    <a href="https://www.odoo.com?utm_source=db&amp;utm_medium=auth" target="_blank" style="color: #999;">Powered by <span>Odoo</span></a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </xpath>
+    </template>
+
+    <!-- Override Login Form: branded button and inputs -->
+    <template id="login_form_override" inherit_id="web.login" name="Branded Login Form">
+        <!-- Style the Log in button -->
+        <xpath expr="//button[@type='submit'][1]" position="attributes">
+            <attribute name="class">btn btn-lg w-100 fw-bold text-white</attribute>
+            <attribute name="style">background: linear-gradient(135deg, #0B3D91 0%, #1E5BBF 100%); border: none; border-radius: 10px; padding: 12px; font-size: 1.05rem; letter-spacing: 0.5px; transition: all 0.3s ease;</attribute>
+        </xpath>
+        <!-- Style Email label -->
+        <xpath expr="//label[@for='login']" position="attributes">
+            <attribute name="style">color: #0B3D91; font-weight: 600;</attribute>
+        </xpath>
+        <!-- Style Password label -->
+        <xpath expr="//label[@for='password']" position="attributes">
+            <attribute name="style">color: #0B3D91; font-weight: 600;</attribute>
+        </xpath>
+        <!-- Style Email input -->
+        <xpath expr="//input[@name='login']" position="attributes">
+            <attribute name="style">border-radius: 8px; border: 1.5px solid #ddd; padding: 10px 14px;</attribute>
+        </xpath>
+        <!-- Style Password input -->
+        <xpath expr="//input[@name='password']" position="attributes">
+            <attribute name="style">border-radius: 8px; border: 1.5px solid #ddd; padding: 10px 14px;</attribute>
+        </xpath>
+    </template>
+
+</odoo>

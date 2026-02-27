@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Archive Form View -->
+    <record id="view_archive_form" model="ir.ui.view">
+        <field name="name">task.management.archive.form</field>
+        <field name="model">task.management.archive</field>
+        <field name="arch" type="xml">
+            <form string="Library Entry" create="0" duplicate="false">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="user_id" invisible="1"/>
+                            <field name="member_id" invisible="1"/>
+                            <field name="name" readonly="1"/>
+                            <field name="document_name"/>
+                        </group>
+                        <group>
+                            <field name="creation_date"/>
+                            <field name="visibility" widget="radio"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="description"
+                               placeholder="Describe your work on this project..."/>
+                    </group>
+                    <group>
+                        <field name="attachment_ids" widget="many2many_binary"
+                               string="Attachments"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Archive Form View (Read-Only for browsing) -->
+    <record id="view_archive_form_readonly" model="ir.ui.view">
+        <field name="name">task.management.archive.form.readonly</field>
+        <field name="model">task.management.archive</field>
+        <field name="arch" type="xml">
+            <form string="Archive Entry" create="0" edit="0" delete="0" duplicate="0">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="document_name"/>
+                        </group>
+                        <group>
+                            <field name="creation_date"/>
+                            <field name="visibility"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="description"/>
+                    </group>
+                    <group>
+                        <field name="attachment_ids" widget="many2many_binary"
+                               string="Attachments"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Archive Tree View -->
+    <record id="view_archive_tree" model="ir.ui.view">
+        <field name="name">task.management.archive.tree</field>
+        <field name="model">task.management.archive</field>
+        <field name="arch" type="xml">
+            <tree string="Library" import="0" export_xlsx="0">
+                <field name="name"/>
+                <field name="document_name"/>
+                <field name="creation_date"/>
+                <field name="visibility" widget="badge"
+                       decoration-success="visibility == 'public'"
+                       decoration-muted="visibility == 'private'"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Archive Search View -->
+    <record id="view_archive_search" model="ir.ui.view">
+        <field name="name">task.management.archive.search</field>
+        <field name="model">task.management.archive</field>
+        <field name="arch" type="xml">
+            <search string="Search Library">
+                <field name="document_name"/>
+                <field name="member_id"/>
+                <separator/>
+                <filter string="Public" name="filter_public"
+                        domain="[('visibility', '=', 'public')]"/>
+                <filter string="Private" name="filter_private"
+                        domain="[('visibility', '=', 'private')]"/>
+                <separator/>
+                <group expand="0" string="Group By">
+                    <filter string="Member" name="group_member"
+                            context="{'group_by': 'member_id'}"/>
+                    <filter string="Visibility" name="group_visibility"
+                            context="{'group_by': 'visibility'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- My Library Action (full CRUD) -->
+    <record id="action_my_archive" model="ir.actions.act_window">
+        <field name="name">My Library</field>
+        <field name="res_model">task.management.archive</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">[('user_id', '=', uid)]</field>
+        <field name="context">{'duplicate': False}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Add a document to your library
+            </p>
+        </field>
+    </record>
+
+    <!-- Browse Public Library Action (read-only) -->
+    <record id="action_public_archives" model="ir.actions.act_window">
+        <field name="name">Browse Public Library</field>
+        <field name="res_model">task.management.archive</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_ids" eval="[
+            (5, 0, 0),
+            (0, 0, {'view_mode': 'tree', 'view_id': ref('view_archive_tree')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_archive_form_readonly')}),
+        ]"/>
+        <field name="domain">[('visibility', '=', 'public')]</field>
+        <field name="context">{'create': False, 'delete': False}</field>
+    </record>
+
+</odoo>

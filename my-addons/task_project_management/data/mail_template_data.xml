@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <!-- Email template: Task Submitted - Notify PM -->
+    <record id="mail_template_task_submitted" model="mail.template">
+        <field name="name">Task Management: Task Submitted</field>
+        <field name="model_id" ref="model_task_management_task"/>
+        <field name="subject">New Task Submitted: {{ object.project_id.name }}</field>
+        <field name="body_html"><![CDATA[
+<div style="margin: 0px; padding: 0px;">
+    <p>Dear Project Manager,</p>
+    <p>A new task has been submitted for your review:</p>
+    <ul>
+        <li><strong>Project:</strong> {{ object.project_id.name }}</li>
+        <li><strong>Member:</strong> {{ object.member_id.name }}</li>
+        <li><strong>Date:</strong> {{ object.date }}</li>
+        <li><strong>Description:</strong> {{ object.description[:100] }}</li>
+        <li><strong>Time:</strong> {{ '%02d:%02d'|format(object.time_from|int, ((object.time_from - object.time_from|int) * 60)|int) }} - {{ '%02d:%02d'|format(object.time_to|int, ((object.time_to - object.time_to|int) * 60)|int) }}</li>
+    </ul>
+    <p>Please review and approve or reject this task.</p>
+</div>
+]]></field>
+        <field name="email_from">{{ (object.member_id.email or '') }}</field>
+        <field name="auto_delete" eval="True"/>
+    </record>
+
+    <!-- Email template: Task Status Changed - Notify Member -->
+    <record id="mail_template_task_status_changed" model="mail.template">
+        <field name="name">Task Management: Task Status Changed</field>
+        <field name="model_id" ref="model_task_management_task"/>
+        <field name="subject">Task {{ object.approval_status }}: {{ object.project_id.name }}</field>
+        <field name="body_html"><![CDATA[
+<div style="margin: 0px; padding: 0px;">
+    <p>Dear {{ object.member_id.name }},</p>
+    <p>Your task status has been updated:</p>
+    <ul>
+        <li><strong>Project:</strong> {{ object.project_id.name }}</li>
+        <li><strong>Date:</strong> {{ object.date }}</li>
+        <li><strong>Description:</strong> {{ object.description[:100] }}</li>
+        <li><strong>Status:</strong> {{ object.approval_status }}</li>
+        {% if object.manager_comment %}
+        <li><strong>Manager Comment:</strong> {{ object.manager_comment }}</li>
+        {% endif %}
+    </ul>
+</div>
+]]></field>
+        <field name="auto_delete" eval="True"/>
+    </record>
+
+    <!-- Email template: Project Deadline Warning -->
+    <record id="mail_template_project_deadline" model="mail.template">
+        <field name="name">Task Management: Project Deadline Warning</field>
+        <field name="model_id" ref="model_task_management_project"/>
+        <field name="subject">Project Deadline: {{ object.name }}</field>
+        <field name="body_html"><![CDATA[
+<div style="margin: 0px; padding: 0px;">
+    <p>Warning: Project deadline reached!</p>
+    <ul>
+        <li><strong>Project:</strong> {{ object.name }}</li>
+        <li><strong>Expected End Date:</strong> {{ object.expected_end_date }}</li>
+        <li><strong>Pending Tasks:</strong> {{ object.pending_task_count }}</li>
+        <li><strong>Progress:</strong> {{ '%.1f'|format(object.progress_percentage) }}%</li>
+    </ul>
+    <p>Please review and take appropriate action.</p>
+</div>
+]]></field>
+        <field name="auto_delete" eval="True"/>
+    </record>
+
+</odoo>

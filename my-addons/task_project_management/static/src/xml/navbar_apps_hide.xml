@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+    <!--
+        Apps Menu is kept visible so users can switch between
+        Task Management and Settings apps.
+        Unwanted entries (Discuss, module manager) are already
+        deactivated via menu_views.xml.
+    -->
+
+</templates>

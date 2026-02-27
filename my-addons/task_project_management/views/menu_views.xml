@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ============================================================ -->
+    <!-- Dashboard Client Actions                                      -->
+    <!-- ============================================================ -->
+
+    <record id="action_member_dashboard" model="ir.actions.client">
+        <field name="name">My Dashboard</field>
+        <field name="tag">task_project_management.member_dashboard</field>
+    </record>
+
+    <record id="action_pm_dashboard" model="ir.actions.client">
+        <field name="name">PM Dashboard</field>
+        <field name="tag">task_project_management.pm_dashboard</field>
+    </record>
+
+    <record id="action_admin_dashboard" model="ir.actions.client">
+        <field name="name">Manager Dashboard</field>
+        <field name="tag">task_project_management.admin_dashboard</field>
+    </record>
+
+    <!-- ============================================================ -->
+    <!-- Hide Discuss and Apps menus                                   -->
+    <!-- ============================================================ -->
+    <record id="mail.menu_root_discuss" model="ir.ui.menu">
+        <field name="active" eval="False"/>
+    </record>
+
+    <record id="base.menu_management" model="ir.ui.menu">
+        <field name="active" eval="False"/>
+    </record>
+
+    <!-- ============================================================ -->
+    <!-- Root Menu                                                     -->
+    <!-- ============================================================ -->
+    <menuitem id="menu_task_management_root"
+              name="Task Management"
+              sequence="50"
+              web_icon="task_project_management,static/description/icon.png"/>
+
+    <!-- ============================================================ -->
+    <!-- Tasks Section (All roles)                                     -->
+    <!-- ============================================================ -->
+    <menuitem id="menu_my_tasks_parent"
+              name="Task Management"
+              parent="menu_task_management_root"
+              sequence="10"
+              groups="task_project_management.group_member,task_project_management.group_project_manager,task_project_management.group_admin_manager,task_project_management.group_manager"/>
+
+    <menuitem id="menu_my_tasks"
+              name="My Tasks"
+              parent="menu_my_tasks_parent"
+              action="action_my_tasks"
+              sequence="10"
+              groups="task_project_management.group_member,task_project_management.group_project_manager"/>
+
+    <menuitem id="menu_my_assignments"
+              name="My Assignments"
+              parent="menu_my_tasks_parent"
+              action="action_my_assignments"
+              sequence="20"
+              groups="task_project_management.group_member,task_project_management.group_project_manager"/>
+
+    <menuitem id="menu_all_tasks"
+              name="All Tasks"
+              parent="menu_my_tasks_parent"
+              action="action_all_tasks"
+              sequence="65"
+              groups="task_project_management.group_admin_manager"/>
+
+    <menuitem id="menu_my_dashboard"
+              name="My Dashboard"
+              parent="menu_my_tasks_parent"
+              action="action_member_dashboard"
+              sequence="70"
+              groups="task_project_management.group_member,task_project_management.group_project_manager"/>
+
+    <!-- ============================================================ -->
+    <!-- Manager Tasks Action (read-only, assigned projects only) -->
+    <!-- ============================================================ -->
+    <record id="action_manager_tasks" model="ir.actions.act_window">
+        <field name="name">All Tasks</field>
+        <field name="res_model">task.management.task</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="view_task_tree_with_member"/>
+        <field name="context">{
+            'create': False,
+            'search_default_group_project': 1,
+        }</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No tasks in your assigned projects
+            </p>
+        </field>
+    </record>
+
+    <!-- Manager Projects Action (read-only) -->
+    <record id="action_manager_projects" model="ir.actions.act_window">
+        <field name="name">Projects</field>
+        <field name="res_model">task.management.project</field>
+        <field name="view_mode">tree,form</field>
+        <field name="context">{
+            'create': False,
+            'search_default_filter_active': 1,
+        }</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No projects assigned to you
+            </p>
+        </field>
+    </record>
+
+    <!-- Manager Members Action (read-only, members+PMs of supervised projects, excludes self) -->
+    <record id="action_manager_members" model="ir.actions.act_window">
+        <field name="name">Members</field>
+        <field name="res_model">task.management.member</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">[
+            '|',
+            ('member_project_ids.manager_ids.user_id', '=', uid),
+            ('managed_project_ids.manager_ids.user_id', '=', uid),
+            ('user_id', '!=', uid),
+            ('role', '!=', 'admin_manager')
+        ]</field>
+        <field name="context">{'create': False}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No members found
+            </p>
+        </field>
+    </record>
+
+    <menuitem id="menu_manager_tasks"
+              name="All Tasks"
+              parent="menu_my_tasks_parent"
+              action="action_manager_tasks"
+              sequence="66"
+              groups="task_project_management.group_manager"/>
+
+    <!-- ============================================================ -->
+    <!-- Projects Section (PM + Admin + Manager)                       -->
+    <!-- ============================================================ -->
+    <menuitem id="menu_projects_parent"
+              name="Projects"
+              parent="menu_task_management_root"
+              sequence="20"
+              groups="task_project_management.group_project_manager,task_project_management.group_admin_manager,task_project_management.group_manager"/>
+
+    <menuitem id="menu_all_projects"
+              name="Projects"
+              parent="menu_projects_parent"
+              action="action_project"
+              sequence="10"
+              groups="task_project_management.group_project_manager,task_project_management.group_admin_manager"/>
+
+    <menuitem id="menu_manager_projects"
+              name="Projects"
+              parent="menu_projects_parent"
+              action="action_manager_projects"
+              sequence="11"
+              groups="task_project_management.group_manager"/>
+
+    <menuitem id="menu_archived_projects"
+              name="Archived Projects"
+              parent="menu_projects_parent"
+              action="action_project_archived"
+              sequence="20"
+              groups="task_project_management.group_admin_manager,task_project_management.group_manager"/>
+
+    <menuitem id="menu_tasks_to_review"
+              name="Tasks to Review"
+              parent="menu_my_tasks_parent"
+              action="action_tasks_to_review"
+              sequence="30"
+              groups="task_project_management.group_project_manager"/>
+
+    <menuitem id="menu_assign_task"
+              name="Assign Task"
+              parent="menu_my_tasks_parent"
+              action="action_assign_task"
+              sequence="40"
+              groups="task_project_management.group_project_manager"/>
+
+    <menuitem id="menu_assigned_tasks"
+              name="Assigned Tasks"
+              parent="menu_my_tasks_parent"
+              action="action_assigned_tasks"
+              sequence="50"
+              groups="task_project_management.group_project_manager"/>
+
+    <!-- Force-remove Admin group from assignment menus (PM-only) -->
+    <record id="menu_tasks_to_review" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('group_project_manager')])]"/>
+    </record>
+    <record id="menu_assign_task" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('group_project_manager')])]"/>
+    </record>
+    <record id="menu_assigned_tasks" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('group_project_manager')])]"/>
+    </record>
+
+    <menuitem id="menu_team_tasks"
+              name="Team Tasks"
+              parent="menu_my_tasks_parent"
+              action="action_team_tasks"
+              sequence="5"
+              groups="task_project_management.group_project_manager"/>
+
+    <menuitem id="menu_pm_dashboard"
+              name="PM Dashboard"
+              parent="menu_projects_parent"
+              action="action_pm_dashboard"
+              sequence="30"
+              groups="task_project_management.group_project_manager"/>
+
+    <!-- ============================================================ -->
+    <!-- Members Section (PM + Admin + Manager)                        -->
+    <!-- ============================================================ -->
+    <menuitem id="menu_members_parent"
+              name="Members"
+              parent="menu_task_management_root"
+              sequence="30"
+              groups="task_project_management.group_project_manager,task_project_management.group_admin_manager,task_project_management.group_manager"/>
+
+    <menuitem id="menu_all_members"
+              name="Members"
+              parent="menu_members_parent"
+              action="action_member"
+              sequence="10"
+              groups="task_project_management.group_admin_manager"/>
+
+    <!-- Force-set admin-only group on all-members menu -->
+    <record id="menu_all_members" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('group_admin_manager')])]"/>
+    </record>
+
+    <menuitem id="menu_pm_members"
+              name="Members"
+              parent="menu_members_parent"
+              action="action_pm_members"
+              sequence="10"
+              groups="task_project_management.group_project_manager"/>
+
+    <menuitem id="menu_manager_members"
+              name="Members"
+              parent="menu_members_parent"
+              action="action_manager_members"
+              sequence="11"
+              groups="task_project_management.group_manager"/>
+
+    <!-- ============================================================ -->
+    <!-- Library (All roles)                                            -->
+    <!-- ============================================================ -->
+    <menuitem id="menu_archive_parent"
+              name="Library"
+              parent="menu_task_management_root"
+              sequence="40"/>
+
+    <menuitem id="menu_my_archive"
+              name="My Library"
+              parent="menu_archive_parent"
+              action="action_my_archive"
+              sequence="10"/>
+
+    <menuitem id="menu_public_archives"
+              name="Browse Public Library"
+              parent="menu_archive_parent"
+              action="action_public_archives"
+              sequence="20"/>
+
+    <!-- ============================================================ -->
+    <!-- Administration (Admin + Manager)                              -->
+    <!-- ============================================================ -->
+    <menuitem id="menu_admin_parent"
+              name="Administration"
+              parent="menu_task_management_root"
+              sequence="50"
+              groups="task_project_management.group_admin_manager,task_project_management.group_manager"/>
+
+    <menuitem id="menu_admin_dashboard"
+              name="Manager Dashboard"
+              parent="menu_admin_parent"
+              action="action_admin_dashboard"
+              sequence="10"
+              groups="task_project_management.group_admin_manager,task_project_management.group_manager"/>
+
+    <menuitem id="menu_audit_trail"
+              name="Audit Trail"
+              parent="menu_admin_parent"
+              action="action_task_audit"
+              sequence="20"
+              groups="task_project_management.group_admin_manager,task_project_management.group_manager"/>
+
+
+    <!-- ============================================================ -->
+    <!-- Configuration (Admin only)                                    -->
+    <!-- ============================================================ -->
+    <menuitem id="menu_config_parent"
+              name="Configuration"
+              parent="menu_task_management_root"
+              sequence="60"
+              groups="task_project_management.group_admin_manager"/>
+
+    <menuitem id="menu_settings"
+              name="Settings"
+              parent="menu_config_parent"
+              action="action_task_management_config"
+              sequence="10"/>
+
+    <menuitem id="menu_general_settings"
+              name="General Settings"
+              parent="menu_config_parent"
+              action="base_setup.action_general_configuration"
+              sequence="20"/>
+
+</odoo>

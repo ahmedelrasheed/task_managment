@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+    <!-- Remove the Channels tab from notification menu -->
+    <t t-inherit="mail.MessagingMenu.content" t-inherit-mode="extension">
+        <xpath expr="//button[contains(@t-on-click, &quot;'channel'&quot;)]" position="replace"/>
+    </t>
+
+</templates>
