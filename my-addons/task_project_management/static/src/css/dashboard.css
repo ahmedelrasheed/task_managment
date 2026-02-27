@@ -22,6 +22,11 @@
     }
 }
 
+/* --- 1b-hide. Hide apps grid icon for non-admin users --- */
+body.o_hide_apps_menu .o_navbar_apps_menu {
+    display: none !important;
+}
+
 /* --- 1b. Apps (hamburger/grid) button — styled to match navbar --- */
 .o_navbar_apps_menu,
 .o_main_navbar .o_navbar_apps_menu {
