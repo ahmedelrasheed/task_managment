@@ -31,6 +31,11 @@
         <field name="active" eval="False"/>
     </record>
 
+    <!-- Re-activate Settings app (was deactivated in a previous upgrade) -->
+    <record id="base.menu_administration" model="ir.ui.menu">
+        <field name="active" eval="True"/>
+    </record>
+
     <!-- ============================================================ -->
     <!-- Root Menu                                                     -->
     <!-- ============================================================ -->

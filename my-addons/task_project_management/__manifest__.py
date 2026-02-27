@@ -61,7 +61,6 @@
             'task_project_management/static/src/js/font_size.js',
             'task_project_management/static/src/js/breadcrumb_enhancer.js',
             'task_project_management/static/src/js/login_alert.js',
-            'task_project_management/static/src/js/mobile_menu.js',
             'task_project_management/static/src/js/session_timeout.js',
             'task_project_management/static/src/xml/login_alert.xml',
             'task_project_management/static/src/xml/navbar_apps_hide.xml',

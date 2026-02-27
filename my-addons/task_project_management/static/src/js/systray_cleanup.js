@@ -3,12 +3,11 @@ import { registry } from "@web/core/registry";
 
 const systrayRegistry = registry.category("systray");
 
-// Remove Activity Menu (clock icon), Switch Company Menu (building icon),
-// and Burger Menu (toggle icon)
+// Remove Activity Menu (clock icon) and Switch Company Menu (building icon)
+// Keep burger_menu — needed on mobile for user profile + app navigation
 const itemsToRemove = [
     "mail.activity_menu",
     "SwitchCompanyMenu",
-    "burger_menu",
 ];
 
 for (const item of itemsToRemove) {
