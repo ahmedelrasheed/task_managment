@@ -35,6 +35,9 @@ export class MemberDashboard extends Component {
             weeklyPerformance: 0,
             monthlyPerformance: 0,
             recentTasks: [],
+            upcomingMeetings: [],
+            meetingsToday: 0,
+            meetingsThisWeek: 0,
         });
         onWillStart(async () => {
             await this.loadData();
@@ -43,13 +46,17 @@ export class MemberDashboard extends Component {
 
     async loadData() {
         try {
-            const [result, companies] = await Promise.all([
+            const [result, companies, meetingData] = await Promise.all([
                 this.orm.call("task.management.task", "get_member_dashboard_data", []),
                 this.orm.call("res.company", "search_read", [[["id", "=", 1]], ["name"]], { limit: 1 }),
+                this.orm.call("task.management.meeting", "get_member_meeting_data", []),
             ]);
             Object.assign(this.state, result);
             if (companies && companies.length) {
                 this.state.companyName = companies[0].name;
+            }
+            if (meetingData) {
+                Object.assign(this.state, meetingData);
             }
         } catch (e) {
             console.error("Failed to load member dashboard data:", e);
@@ -72,6 +79,7 @@ export class PMDashboard extends Component {
         this.state = useState({
             companyName: "",
             projects: [],
+            meetingsByProject: [],
         });
         onWillStart(async () => {
             await this.loadData();
@@ -80,13 +88,17 @@ export class PMDashboard extends Component {
 
     async loadData() {
         try {
-            const [result, companies] = await Promise.all([
+            const [result, companies, meetingData] = await Promise.all([
                 this.orm.call("task.management.task", "get_pm_dashboard_data", []),
                 this.orm.call("res.company", "search_read", [[["id", "=", 1]], ["name"]], { limit: 1 }),
+                this.orm.call("task.management.meeting", "get_pm_meeting_data", []),
             ]);
             Object.assign(this.state, result);
             if (companies && companies.length) {
                 this.state.companyName = companies[0].name;
+            }
+            if (meetingData) {
+                Object.assign(this.state, meetingData);
             }
         } catch (e) {
             console.error("Failed to load PM dashboard data:", e);

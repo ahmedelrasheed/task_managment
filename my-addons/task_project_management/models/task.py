@@ -107,6 +107,9 @@ class TaskManagementTask(models.Model):
     is_current_user_member = fields.Boolean(
         compute='_compute_is_current_user_member',
     )
+    is_oversight_readonly = fields.Boolean(
+        compute='_compute_is_oversight_readonly',
+    )
     project_member_ids = fields.Many2many(
         'task.management.member',
         compute='_compute_project_member_ids',
@@ -140,15 +143,15 @@ class TaskManagementTask(models.Model):
 
     @api.depends_context('uid')
     def _compute_can_assign(self):
-        """PMs, Admins, and Managers can assign tasks."""
+        """PMs, Managers and Admins can assign tasks."""
         is_pm = self.env.user.has_group(
-            'task_project_management.group_project_manager')
+            'task_project_management.group_project_manager') or \
+            self.env.user.has_group(
+            'task_project_management.group_manager')
         is_admin = self.env.user.has_group(
             'task_project_management.group_admin_manager')
-        is_manager = self.env.user.has_group(
-            'task_project_management.group_manager')
         for task in self:
-            task.can_assign = is_pm or is_admin or is_manager
+            task.can_assign = is_pm or is_admin
 
     @api.depends('member_id')
     @api.depends_context('uid')
@@ -157,6 +160,28 @@ class TaskManagementTask(models.Model):
             task.is_current_user_member = (
                 task.member_id and task.member_id.user_id.id == self.env.uid
             )
+
+    @api.depends('project_id', 'member_id')
+    @api.depends_context('uid')
+    def _compute_is_oversight_readonly(self):
+        """True when Manager views a task from an oversight project
+        (not PM of the project, not the task member). Makes form readonly
+        while keeping chatter accessible."""
+        is_manager = self.env.user.has_group(
+            'task_project_management.group_manager')
+        is_admin = self.env.user.has_group(
+            'task_project_management.group_admin_manager')
+        for task in self:
+            if not is_manager or is_admin:
+                task.is_oversight_readonly = False
+            elif not task.project_id:
+                task.is_oversight_readonly = False
+            else:
+                is_project_pm = self.env.uid in \
+                    task.project_id.project_manager_ids.mapped('user_id.id')
+                is_member = (task.member_id and
+                             task.member_id.user_id.id == self.env.uid)
+                task.is_oversight_readonly = not is_project_pm and not is_member
 
     @api.depends('project_id')
     def _compute_project_member_ids(self):
@@ -180,7 +205,9 @@ class TaskManagementTask(models.Model):
         if is_admin:
             return {'domain': {'project_id': [('status', 'in', ['waiting', 'active'])]}}
         is_pm = self.env.user.has_group(
-            'task_project_management.group_project_manager')
+            'task_project_management.group_project_manager') or \
+            self.env.user.has_group(
+            'task_project_management.group_manager')
         if is_pm:
             if self.member_id:
                 return {'domain': {'project_id': [
@@ -340,7 +367,9 @@ class TaskManagementTask(models.Model):
         is_pm_or_admin = self.env.user.has_group(
             'task_project_management.group_project_manager') or \
             self.env.user.has_group(
-            'task_project_management.group_admin_manager')
+            'task_project_management.group_admin_manager') or \
+            self.env.user.has_group(
+            'task_project_management.group_manager')
         if is_pm_or_admin:
             return
         limit_days = int(self.env['ir.config_parameter'].sudo().get_param(
@@ -374,7 +403,9 @@ class TaskManagementTask(models.Model):
             if is_admin:
                 continue
             is_pm = self.env.user.has_group(
-                'task_project_management.group_project_manager')
+                'task_project_management.group_project_manager') or \
+                self.env.user.has_group(
+                'task_project_management.group_manager')
             if is_pm:
                 current_member = self.env[
                     'task.management.member'].sudo()._get_member_for_user()
@@ -449,7 +480,9 @@ class TaskManagementTask(models.Model):
             self.env.user.has_group(
                 'task_project_management.group_project_manager') or
             self.env.user.has_group(
-                'task_project_management.group_admin_manager'))
+                'task_project_management.group_admin_manager') or
+            self.env.user.has_group(
+                'task_project_management.group_manager'))
         if 'is_current_user_pm' in fields_list:
             defaults['is_current_user_pm'] = is_pm
         if 'can_assign' in fields_list:
@@ -467,6 +500,8 @@ class TaskManagementTask(models.Model):
                 member = self.env['task.management.member'].search(
                     [('user_id', '=', self.env.uid)], limit=1)
                 defaults['is_current_user_member'] = bool(member)
+        if 'is_oversight_readonly' in fields_list:
+            defaults['is_oversight_readonly'] = False
         return defaults
 
     @api.model_create_multi
@@ -475,9 +510,11 @@ class TaskManagementTask(models.Model):
             vals['entry_timestamp'] = fields.Datetime.now()
 
             if vals.get('approval_status') == 'assigned':
-                # Only PMs and Admins can assign tasks to members
+                # Only PMs, Managers and Admins can assign tasks to members
                 is_pm = self.env.user.has_group(
-                    'task_project_management.group_project_manager')
+                    'task_project_management.group_project_manager') or \
+                    self.env.user.has_group(
+                    'task_project_management.group_manager')
                 is_admin = self.env.user.has_group(
                     'task_project_management.group_admin_manager')
                 if not is_pm and not is_admin:
@@ -835,7 +872,7 @@ class TaskManagementTask(models.Model):
         tasks = self.sudo().search([('member_id', '=', member.id)])
         non_rejected = tasks.filtered(lambda t: t.approval_status != 'rejected')
         today = fields.Date.context_today(self)
-        week_start = today - timedelta(days=today.weekday())
+        week_start = today - timedelta(days=(today.weekday() + 1) % 7)
         month_start = today.replace(day=1)
 
         hours_today = sum(non_rejected.filtered(
@@ -1541,7 +1578,9 @@ class TaskManagementTask(models.Model):
         is_pm = self.env.user.has_group(
             'task_project_management.group_project_manager') or \
             self.env.user.has_group(
-            'task_project_management.group_admin_manager')
+            'task_project_management.group_admin_manager') or \
+            self.env.user.has_group(
+            'task_project_management.group_manager')
         if is_pm:
             managed_projects = self.env['task.management.project'].sudo().search([
                 ('project_manager_ids', 'in', [member.id]),

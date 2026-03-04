@@ -30,7 +30,8 @@ class TaskManagementProject(models.Model):
         string='Project Managers',
         domain=lambda self: [
             ('user_id.groups_id', 'in',
-             [self.env.ref('task_project_management.group_project_manager').id])
+             [self.env.ref('task_project_management.group_project_manager').id,
+              self.env.ref('task_project_management.group_manager').id])
         ],
     )
     member_ids = fields.Many2many(

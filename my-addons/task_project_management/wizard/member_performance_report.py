@@ -85,7 +85,7 @@ class MemberPerformanceReport(models.TransientModel):
         if self.period == 'today':
             return today, today
         elif self.period == 'week':
-            week_start = today - timedelta(days=today.weekday())
+            week_start = today - timedelta(days=(today.weekday() + 1) % 7)
             week_end = week_start + timedelta(days=6)
             return week_start, week_end
         elif self.period == 'month':

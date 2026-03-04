@@ -36,10 +36,10 @@ access_proj_report_phase_pm,task.management.project.performance.phase.pm,model_t
 access_proj_report_phase_admin,task.management.project.performance.phase.admin,model_task_management_project_performance_phase,group_admin_manager,1,1,1,1
 access_change_password_admin,task.management.change.password.wizard.admin,model_task_management_change_password_wizard,group_admin_manager,1,1,1,1
 access_member_manager,task.management.member.manager,model_task_management_member,group_manager,1,0,0,0
-access_project_manager_role,task.management.project.manager,model_task_management_project,group_manager,1,0,0,0
+access_project_manager_role,task.management.project.manager,model_task_management_project,group_manager,1,1,0,0
 access_task_manager,task.management.task.manager,model_task_management_task,group_manager,1,1,1,0
 access_audit_manager,task.management.task.audit.manager,model_task_management_task_audit,group_manager,1,0,1,0
-access_phase_manager,task.management.project.phase.manager,model_task_management_project_phase,group_manager,1,0,0,0
+access_phase_manager,task.management.project.phase.manager,model_task_management_project_phase,group_manager,1,1,1,1
 access_wizard_manager,task.management.export.report.wizard.manager,model_task_management_export_report_wizard,group_manager,1,1,1,1
 access_perf_report_manager,task.management.member.performance.report.manager,model_task_management_member_performance_report,group_manager,1,1,1,1
 access_perf_line_manager,task.management.member.performance.line.manager,model_task_management_member_performance_line,group_manager,1,1,1,1
@@ -48,3 +48,7 @@ access_proj_report_manager,task.management.project.performance.report.manager,mo
 access_proj_report_member_manager,task.management.project.performance.member.manager,model_task_management_project_performance_member,group_manager,1,1,1,1
 access_proj_report_task_manager,task.management.project.performance.task.manager,model_task_management_project_performance_task,group_manager,1,1,1,1
 access_proj_report_phase_manager,task.management.project.performance.phase.manager,model_task_management_project_performance_phase,group_manager,1,1,1,1
+access_meeting_member,task.management.meeting.member,model_task_management_meeting,group_member,1,0,0,0
+access_meeting_pm,task.management.meeting.pm,model_task_management_meeting,group_project_manager,1,1,1,0
+access_meeting_admin,task.management.meeting.admin,model_task_management_meeting,group_admin_manager,1,1,1,1
+access_meeting_manager,task.management.meeting.manager,model_task_management_meeting,group_manager,1,1,1,0

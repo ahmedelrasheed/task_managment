@@ -3550,3 +3550,307 @@ msgstr ""
 #: code:addons/task_project_management/static/src/xml/dashboard.xml:0
 msgid "No projects found. Create a project to see data here."
 msgstr ""
+
+#. module: task_project_management
+#. odoo-javascript
+#: code:addons/task_project_management/static/src/xml/dashboard.xml:0
+msgid "Meeting"
+msgstr ""
+
+#. module: task_project_management
+msgid "Meetings"
+msgstr ""
+
+#. module: task_project_management
+msgid "Meeting Title"
+msgstr ""
+
+#. module: task_project_management
+msgid "Date"
+msgstr ""
+
+#. module: task_project_management
+msgid "From"
+msgstr ""
+
+#. module: task_project_management
+msgid "To"
+msgstr ""
+
+#. module: task_project_management
+msgid "Duration (Hours)"
+msgstr ""
+
+#. module: task_project_management
+#. odoo-javascript
+#: code:addons/task_project_management/static/src/xml/dashboard.xml:0
+msgid "Mode"
+msgstr ""
+
+#. module: task_project_management
+msgid "In Person"
+msgstr ""
+
+#. module: task_project_management
+msgid "Online"
+msgstr ""
+
+#. module: task_project_management
+msgid "Hybrid"
+msgstr ""
+
+#. module: task_project_management
+msgid "Location"
+msgstr ""
+
+#. module: task_project_management
+msgid "Meeting Link"
+msgstr ""
+
+#. module: task_project_management
+msgid "Google Meet or other online meeting URL"
+msgstr ""
+
+#. module: task_project_management
+msgid "Type"
+msgstr ""
+
+#. module: task_project_management
+msgid "Project Review"
+msgstr ""
+
+#. module: task_project_management
+msgid "Task Review"
+msgstr ""
+
+#. module: task_project_management
+msgid "Team Meeting"
+msgstr ""
+
+#. module: task_project_management
+msgid "Other"
+msgstr ""
+
+#. module: task_project_management
+msgid "Status"
+msgstr ""
+
+#. module: task_project_management
+msgid "Draft"
+msgstr ""
+
+#. module: task_project_management
+msgid "Confirmed"
+msgstr ""
+
+#. module: task_project_management
+msgid "In Progress"
+msgstr ""
+
+#. module: task_project_management
+msgid "Completed"
+msgstr ""
+
+#. module: task_project_management
+msgid "Cancelled"
+msgstr ""
+
+#. module: task_project_management
+msgid "Project"
+msgstr ""
+
+#. module: task_project_management
+msgid "Related Task"
+msgstr ""
+
+#. module: task_project_management
+msgid "Organizer"
+msgstr ""
+
+#. module: task_project_management
+msgid "Attendees"
+msgstr ""
+
+#. module: task_project_management
+msgid "Agenda"
+msgstr ""
+
+#. module: task_project_management
+msgid "Minutes"
+msgstr ""
+
+#. module: task_project_management
+msgid "Start"
+msgstr ""
+
+#. module: task_project_management
+msgid "End"
+msgstr ""
+
+#. module: task_project_management
+msgid "Confirm"
+msgstr ""
+
+#. module: task_project_management
+msgid "Start Meeting"
+msgstr ""
+
+#. module: task_project_management
+msgid "Complete"
+msgstr ""
+
+#. module: task_project_management
+msgid "Cancel"
+msgstr ""
+
+#. module: task_project_management
+msgid "Reset to Draft"
+msgstr ""
+
+#. module: task_project_management
+msgid "Only draft meetings can be confirmed."
+msgstr ""
+
+#. module: task_project_management
+msgid "Only confirmed meetings can be started."
+msgstr ""
+
+#. module: task_project_management
+msgid "Only in-progress meetings can be completed."
+msgstr ""
+
+#. module: task_project_management
+msgid "This meeting cannot be cancelled."
+msgstr ""
+
+#. module: task_project_management
+msgid "Only cancelled meetings can be reset to draft."
+msgstr ""
+
+#. module: task_project_management
+msgid "Only Project Managers and Admins can create meetings."
+msgstr ""
+
+#. module: task_project_management
+msgid "Start time must be between 0 and 24."
+msgstr ""
+
+#. module: task_project_management
+msgid "End time must be between 0 and 24."
+msgstr ""
+
+#. module: task_project_management
+msgid "End time must be after start time."
+msgstr ""
+
+#. module: task_project_management
+msgid "Meeting date cannot be in the past."
+msgstr ""
+
+#. module: task_project_management
+msgid "Meeting <b>%s</b> has been confirmed for %s."
+msgstr ""
+
+#. module: task_project_management
+msgid "Join online: <a href=\"%s\">%s</a>"
+msgstr ""
+
+#. module: task_project_management
+msgid "Location: %s"
+msgstr ""
+
+#. module: task_project_management
+msgid "Meeting <b>%s</b> on %s has been cancelled."
+msgstr ""
+
+#. module: task_project_management
+msgid "Minutes have been updated for meeting <b>%s</b>."
+msgstr ""
+
+#. module: task_project_management
+msgid "My Meetings"
+msgstr ""
+
+#. module: task_project_management
+msgid "Project Meetings"
+msgstr ""
+
+#. module: task_project_management
+msgid "All Meetings"
+msgstr ""
+
+#. module: task_project_management
+msgid "No meetings found"
+msgstr ""
+
+#. module: task_project_management
+msgid "Schedule a meeting to collaborate with your team."
+msgstr ""
+
+#. module: task_project_management
+msgid "No project meetings found"
+msgstr ""
+
+#. module: task_project_management
+msgid "Create a meeting for your managed projects."
+msgstr ""
+
+#. module: task_project_management
+msgid "No meetings in your supervised projects"
+msgstr ""
+
+#. module: task_project_management
+msgid "Search Meetings"
+msgstr ""
+
+#. module: task_project_management
+msgid "Today"
+msgstr ""
+
+#. module: task_project_management
+msgid "This Week"
+msgstr ""
+
+#. module: task_project_management
+msgid "Upcoming"
+msgstr ""
+
+#. module: task_project_management
+msgid "Group By"
+msgstr ""
+
+#. module: task_project_management
+#. odoo-javascript
+#: code:addons/task_project_management/static/src/xml/dashboard.xml:0
+msgid "Upcoming Meetings"
+msgstr ""
+
+#. module: task_project_management
+#. odoo-javascript
+#: code:addons/task_project_management/static/src/xml/dashboard.xml:0
+msgid "No upcoming meetings"
+msgstr ""
+
+#. module: task_project_management
+#. odoo-javascript
+#: code:addons/task_project_management/static/src/xml/dashboard.xml:0
+msgid "Join"
+msgstr ""
+
+#. module: task_project_management
+#. odoo-javascript
+#: code:addons/task_project_management/static/src/xml/dashboard.xml:0
+msgid "Time"
+msgstr ""
+
+#. module: task_project_management
+#. odoo-javascript
+#: code:addons/task_project_management/static/src/xml/dashboard.xml:0
+msgid "This Week:"
+msgstr ""
+
+#. module: task_project_management
+#. odoo-javascript
+#: code:addons/task_project_management/static/src/xml/dashboard.xml:0
+msgid "Today:"
+msgstr ""

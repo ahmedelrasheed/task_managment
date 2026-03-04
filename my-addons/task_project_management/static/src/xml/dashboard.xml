@@ -174,6 +174,71 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Upcoming Meetings -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0"><t t-esc="_t('Upcoming Meetings')"/></h5>
+                                <div>
+                                    <span class="badge text-bg-primary me-2">
+                                        <t t-esc="_t('Today:')"/> <t t-esc="state.meetingsToday"/>
+                                    </span>
+                                    <span class="badge text-bg-info">
+                                        <t t-esc="_t('This Week:')"/> <t t-esc="state.meetingsThisWeek"/>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="card-body p-0">
+                                <t t-if="state.upcomingMeetings.length">
+                                    <table class="table table-striped mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th><t t-esc="_t('Date')"/></th>
+                                                <th><t t-esc="_t('Time')"/></th>
+                                                <th><t t-esc="_t('Meeting')"/></th>
+                                                <th><t t-esc="_t('Project')"/></th>
+                                                <th><t t-esc="_t('Type')"/></th>
+                                                <th><t t-esc="_t('Mode')"/></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-foreach="state.upcomingMeetings" t-as="meeting" t-key="meeting.id">
+                                                <tr>
+                                                    <td t-esc="meeting.date"/>
+                                                    <td t-esc="meeting.time_display"/>
+                                                    <td t-esc="meeting.name"/>
+                                                    <td t-esc="meeting.project"/>
+                                                    <td>
+                                                        <span t-attf-class="badge #{meeting.meeting_type === 'project_review' ? 'text-bg-info' : meeting.meeting_type === 'task_review' ? 'text-bg-success' : meeting.meeting_type === 'team_meeting' ? 'text-bg-warning' : 'text-bg-secondary'}"
+                                                              t-esc="meeting.meeting_type_display or meeting.meeting_type"/>
+                                                    </td>
+                                                    <td>
+                                                        <span t-attf-class="badge #{meeting.meeting_mode === 'online' ? 'text-bg-info' : meeting.meeting_mode === 'in_person' ? 'text-bg-success' : 'text-bg-warning'}"
+                                                              t-esc="meeting.meeting_mode_display or meeting.meeting_mode"/>
+                                                        <a t-if="(meeting.meeting_mode === 'online' || meeting.meeting_mode === 'hybrid') &amp;&amp; meeting.meeting_link"
+                                                           t-att-href="meeting.meeting_link"
+                                                           target="_blank"
+                                                           class="btn btn-sm btn-outline-primary ms-1">
+                                                            <i class="fa fa-video-camera"/> <t t-esc="_t('Join')"/>
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </table>
+                                </t>
+                                <t t-else="">
+                                    <div class="text-center text-muted py-4">
+                                        <i class="fa fa-calendar-o fa-2x mb-2 d-block"/>
+                                        <p><t t-esc="_t('No upcoming meetings')"/></p>
+                                    </div>
+                                </t>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </Layout>
     </t>

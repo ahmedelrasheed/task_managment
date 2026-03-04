@@ -83,7 +83,7 @@ class ProjectPerformanceReport(models.TransientModel):
         elif self.period == 'today':
             return today, today
         elif self.period == 'week':
-            week_start = today - timedelta(days=today.weekday())
+            week_start = today - timedelta(days=(today.weekday() + 1) % 7)
             return week_start, week_start + timedelta(days=6)
         elif self.period == 'month':
             month_start = today.replace(day=1)
@@ -147,7 +147,7 @@ class ProjectPerformanceReport(models.TransientModel):
             approved_hrs = sum(approved.mapped('duration_hours'))
 
             report.project_status = dict(
-                proj._fields['status'].selection).get(
+                proj._fields['status']._description_selection(proj.env)).get(
                 proj.status, proj.status)
             report.phase_count = len(proj.phase_ids)
             report.total_tasks = total
@@ -302,7 +302,7 @@ class ProjectPerformanceReport(models.TransientModel):
             m_late = m_tasks.filtered(lambda t: t.is_late_entry)
             unique_days = len(set(m_tasks.mapped('date')))
             role_label = dict(
-                member._fields['role'].selection).get(
+                member._fields['role']._description_selection(member.env)).get(
                 member.role, member.role)
             writer.writerow([
                 '', mi, member.name, role_label, m_total,

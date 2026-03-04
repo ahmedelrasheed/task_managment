@@ -13,6 +13,7 @@
                     <field name="is_current_user_member" invisible="1"/>
                     <field name="assigned_by_id" invisible="1"/>
                     <field name="is_current_user_project_pm" invisible="1"/>
+                    <field name="is_oversight_readonly" invisible="1"/>
                     <field name="task_type" widget="badge"
                            decoration-info="task_type == 'assigned'"
                            decoration-muted="task_type == 'initiated'"
@@ -98,13 +99,13 @@
                                    invisible="not is_current_user_project_pm or assigned_by_id or approval_status == 'assigned'"
                                    readonly="1"/>
                             <field name="project_id"
-                                   readonly="approval_status == 'approved' or (is_current_user_project_pm and not is_current_user_member)"
+                                   readonly="approval_status == 'approved' or is_oversight_readonly or (is_current_user_project_pm and not is_current_user_member)"
                                    invisible="assigned_by_id or approval_status == 'assigned'"
                                    domain="[('status', 'in', ['waiting', 'active'])]"
                                    context="{'restrict_to_member_projects': True}"
                                    options="{'no_create': True}"/>
                             <field name="phase_id"
-                                   readonly="approval_status == 'approved' or (is_current_user_project_pm and not is_current_user_member)"
+                                   readonly="approval_status == 'approved' or is_oversight_readonly or (is_current_user_project_pm and not is_current_user_member)"
                                    invisible="assigned_by_id or approval_status == 'assigned'"
                                    domain="[('project_id', '=', project_id), ('is_active', '=', True), ('completion_rate', '&lt;', 100)]"
                                    options="{'no_create': True}"/>
@@ -112,11 +113,11 @@
                         <!-- Work fields: hidden when PM/Admin views an assigned task (no work data yet) -->
                         <group invisible="approval_status == 'assigned' and not is_current_user_member">
                             <field name="date"
-                                   readonly="approval_status == 'approved' or (is_current_user_project_pm and not is_current_user_member)"/>
+                                   readonly="approval_status == 'approved' or is_oversight_readonly or (is_current_user_project_pm and not is_current_user_member)"/>
                             <field name="time_from" widget="float_time_spinner"
-                                   readonly="approval_status == 'approved' or (is_current_user_project_pm and not is_current_user_member)"/>
+                                   readonly="approval_status == 'approved' or is_oversight_readonly or (is_current_user_project_pm and not is_current_user_member)"/>
                             <field name="time_to" widget="float_time_spinner"
-                                   readonly="approval_status == 'approved' or (is_current_user_project_pm and not is_current_user_member)"/>
+                                   readonly="approval_status == 'approved' or is_oversight_readonly or (is_current_user_project_pm and not is_current_user_member)"/>
                             <field name="duration_hours" widget="float_time"
                                    readonly="1"/>
                             <field name="entry_timestamp" readonly="1"/>
@@ -124,12 +125,12 @@
                     </group>
                     <group invisible="approval_status == 'assigned' and not is_current_user_member">
                         <field name="description"
-                               readonly="approval_status == 'approved' or (is_current_user_project_pm and not is_current_user_member)"
+                               readonly="approval_status == 'approved' or is_oversight_readonly or (is_current_user_project_pm and not is_current_user_member)"
                                placeholder="Describe the work done..."/>
                     </group>
                     <group invisible="approval_status == 'assigned' and not is_current_user_member">
                         <field name="attachment_ids" widget="many2many_binary"
-                               readonly="approval_status == 'approved' or (is_current_user_project_pm and not is_current_user_member)"
+                               readonly="approval_status == 'approved' or is_oversight_readonly or (is_current_user_project_pm and not is_current_user_member)"
                                string="Attachments"/>
                     </group>
                     <group string="Project Manager Review"
@@ -277,8 +278,8 @@
                         domain="[('date', '=', context_today().strftime('%Y-%m-%d'))]"/>
                 <filter string="This Week" name="filter_this_week"
                         domain="[
-                            ('date', '>=', (context_today() - datetime.timedelta(days=context_today().weekday())).strftime('%Y-%m-%d')),
-                            ('date', '&lt;=', (context_today() + datetime.timedelta(days=6-context_today().weekday())).strftime('%Y-%m-%d'))
+                            ('date', '>=', (context_today() - datetime.timedelta(days=(context_today().weekday() + 1) % 7)).strftime('%Y-%m-%d')),
+                            ('date', '&lt;=', (context_today() - datetime.timedelta(days=(context_today().weekday() + 1) % 7) + datetime.timedelta(days=6)).strftime('%Y-%m-%d'))
                         ]"/>
                 <filter string="This Month" name="filter_this_month"
                         domain="[

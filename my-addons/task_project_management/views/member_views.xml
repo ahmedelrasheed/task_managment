@@ -18,7 +18,7 @@
                             string="Assign Task"
                             type="object" class="btn-primary"
                             invisible="not id"
-                            groups="task_project_management.group_project_manager"/>
+                            groups="task_project_management.group_project_manager,task_project_management.group_manager"/>
                     <button name="action_change_password"
                             string="Change Password"
                             type="object" class="btn-secondary"

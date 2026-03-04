@@ -117,15 +117,16 @@
         </field>
     </record>
 
-    <!-- Manager Members Action (read-only, members+PMs of supervised projects, excludes self) -->
+    <!-- Manager Members Action (supervised + PM-managed projects, excludes self) -->
     <record id="action_manager_members" model="ir.actions.act_window">
         <field name="name">Members</field>
         <field name="res_model">task.management.member</field>
         <field name="view_mode">tree,form</field>
         <field name="domain">[
-            '|',
+            '|', '|',
             ('member_project_ids.manager_ids.user_id', '=', uid),
             ('managed_project_ids.manager_ids.user_id', '=', uid),
+            ('member_project_ids.project_manager_ids.user_id', '=', uid),
             ('user_id', '!=', uid),
             ('role', '!=', 'admin_manager')
         ]</field>
@@ -158,14 +159,12 @@
               parent="menu_projects_parent"
               action="action_project"
               sequence="10"
-              groups="task_project_management.group_project_manager,task_project_management.group_admin_manager"/>
+              groups="task_project_management.group_project_manager,task_project_management.group_admin_manager,task_project_management.group_manager"/>
 
-    <menuitem id="menu_manager_projects"
-              name="Projects"
-              parent="menu_projects_parent"
-              action="action_manager_projects"
-              sequence="11"
-              groups="task_project_management.group_manager"/>
+    <!-- Manager now uses PM's Projects menu above; hide the old read-only one -->
+    <record id="menu_manager_projects" model="ir.ui.menu">
+        <field name="active" eval="False"/>
+    </record>
 
     <menuitem id="menu_archived_projects"
               name="Archived Projects"
@@ -195,7 +194,7 @@
               sequence="50"
               groups="task_project_management.group_project_manager"/>
 
-    <!-- Force-set PM + Manager groups on assignment menus (not Admin) -->
+    <!-- Give Manager access to PM operational menus (PM no longer inherited) -->
     <record id="menu_tasks_to_review" model="ir.ui.menu">
         <field name="groups_id" eval="[(6, 0, [ref('group_project_manager'), ref('group_manager')])]"/>
     </record>
@@ -203,6 +202,9 @@
         <field name="groups_id" eval="[(6, 0, [ref('group_project_manager'), ref('group_manager')])]"/>
     </record>
     <record id="menu_assigned_tasks" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('group_project_manager'), ref('group_manager')])]"/>
+    </record>
+    <record id="menu_team_tasks" model="ir.ui.menu">
         <field name="groups_id" eval="[(6, 0, [ref('group_project_manager'), ref('group_manager')])]"/>
     </record>
 
@@ -253,6 +255,48 @@
               parent="menu_members_parent"
               action="action_manager_members"
               sequence="11"
+              groups="task_project_management.group_manager"/>
+
+    <!-- ============================================================ -->
+    <!-- Meetings Section                                              -->
+    <!-- ============================================================ -->
+    <menuitem id="menu_meetings_parent"
+              name="Meetings"
+              parent="menu_task_management_root"
+              sequence="35"
+              groups="task_project_management.group_member,task_project_management.group_project_manager,task_project_management.group_admin_manager,task_project_management.group_manager"/>
+
+    <menuitem id="menu_my_meetings"
+              name="My Meetings"
+              parent="menu_meetings_parent"
+              action="action_my_meetings"
+              sequence="10"
+              groups="task_project_management.group_member,task_project_management.group_project_manager"/>
+
+    <menuitem id="menu_project_meetings"
+              name="Project Meetings"
+              parent="menu_meetings_parent"
+              action="action_project_meetings"
+              sequence="20"
+              groups="task_project_management.group_project_manager"/>
+
+    <!-- PM + Manager on Project Meetings -->
+    <record id="menu_project_meetings" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('group_project_manager'), ref('group_manager')])]"/>
+    </record>
+
+    <menuitem id="menu_all_meetings"
+              name="All Meetings"
+              parent="menu_meetings_parent"
+              action="action_all_meetings"
+              sequence="30"
+              groups="task_project_management.group_admin_manager"/>
+
+    <menuitem id="menu_manager_meetings"
+              name="Meetings"
+              parent="menu_meetings_parent"
+              action="action_manager_meetings"
+              sequence="40"
               groups="task_project_management.group_manager"/>
 
     <!-- ============================================================ -->

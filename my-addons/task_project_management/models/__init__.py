@@ -6,3 +6,4 @@ from . import task_audit
 from . import archive
 from . import res_config_settings
 from . import res_users
+from . import meeting

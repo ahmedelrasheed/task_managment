@@ -33,8 +33,9 @@
     </record>
 
     <!--
-        Manager: read-only oversight role. Does NOT imply any other TM group.
-        Visibility controlled via project.manager_ids (admin assigns projects).
+        Manager: oversight role with PM-level capabilities.
+        Gets PM permissions via ACL/record rules (NOT group inheritance),
+        so Manager gets its own menus without inheriting PM's personal menus.
     -->
     <record id="group_manager" model="res.groups">
         <field name="name">Manager</field>
@@ -297,5 +298,56 @@
         <field name="groups" eval="[(4, ref('group_manager'))]"/>
     </record>
 
+
+    <!-- ============================================================ -->
+    <!-- Meeting Record Rules                                         -->
+    <!-- ============================================================ -->
+
+    <!-- Member: meetings where organizer or attendee -->
+    <record id="rule_meeting_member" model="ir.rule">
+        <field name="name">Meeting: Member sees meetings as organizer or attendee</field>
+        <field name="model_id" ref="model_task_management_meeting"/>
+        <field name="domain_force">[
+            '|',
+            ('organizer_id.user_id', '=', user.id),
+            ('attendee_ids.user_id', '=', user.id)
+        ]</field>
+        <field name="groups" eval="[(4, ref('group_member'))]"/>
+    </record>
+
+    <!-- PM: managed project meetings OR organizer OR attendee -->
+    <record id="rule_meeting_pm" model="ir.rule">
+        <field name="name">Meeting: PM sees managed project meetings or own</field>
+        <field name="model_id" ref="model_task_management_meeting"/>
+        <field name="domain_force">[
+            '|', '|',
+            ('project_id.project_manager_ids.user_id', '=', user.id),
+            ('organizer_id.user_id', '=', user.id),
+            ('attendee_ids.user_id', '=', user.id)
+        ]</field>
+        <field name="groups" eval="[(4, ref('group_project_manager'))]"/>
+    </record>
+
+    <!-- Admin: all meetings -->
+    <record id="rule_meeting_admin" model="ir.rule">
+        <field name="name">Meeting: Admin sees all meetings</field>
+        <field name="model_id" ref="model_task_management_meeting"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('group_admin_manager'))]"/>
+    </record>
+
+    <!-- Manager: meetings from oversight + PM-managed projects + own -->
+    <record id="rule_meeting_manager" model="ir.rule">
+        <field name="name">Meeting: Manager sees supervised + managed project meetings</field>
+        <field name="model_id" ref="model_task_management_meeting"/>
+        <field name="domain_force">[
+            '|', '|', '|',
+            ('project_id.manager_ids.user_id', '=', user.id),
+            ('project_id.project_manager_ids.user_id', '=', user.id),
+            ('organizer_id.user_id', '=', user.id),
+            ('attendee_ids.user_id', '=', user.id)
+        ]</field>
+        <field name="groups" eval="[(4, ref('group_manager'))]"/>
+    </record>
 
 </odoo>

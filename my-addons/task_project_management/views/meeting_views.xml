@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ============================================================ -->
+    <!-- Meeting Tree View                                             -->
+    <!-- ============================================================ -->
+    <record id="view_meeting_tree" model="ir.ui.view">
+        <field name="name">task.management.meeting.tree</field>
+        <field name="model">task.management.meeting</field>
+        <field name="arch" type="xml">
+            <tree string="Meetings" default_order="date desc">
+                <field name="date"/>
+                <field name="name"/>
+                <field name="project_id"/>
+                <field name="meeting_type" widget="badge"
+                       decoration-info="meeting_type == 'project_review'"
+                       decoration-success="meeting_type == 'task_review'"
+                       decoration-warning="meeting_type == 'team_meeting'"
+                       decoration-danger="meeting_type == 'other'"/>
+                <field name="status" widget="badge"
+                       decoration-info="status == 'draft'"
+                       decoration-primary="status == 'confirmed'"
+                       decoration-warning="status == 'in_progress'"
+                       decoration-success="status == 'completed'"
+                       decoration-danger="status == 'cancelled'"/>
+                <field name="organizer_id"/>
+                <field name="meeting_mode" widget="badge"
+                       decoration-info="meeting_mode == 'online'"
+                       decoration-success="meeting_mode == 'in_person'"
+                       decoration-warning="meeting_mode == 'hybrid'"/>
+                <field name="time_from" widget="float_time"/>
+                <field name="time_to" widget="float_time"/>
+                <field name="duration" widget="float_time"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- ============================================================ -->
+    <!-- Meeting Form View                                             -->
+    <!-- ============================================================ -->
+    <record id="view_meeting_form" model="ir.ui.view">
+        <field name="name">task.management.meeting.form</field>
+        <field name="model">task.management.meeting</field>
+        <field name="arch" type="xml">
+            <form string="Meeting">
+                <!-- Hidden computed fields -->
+                <field name="is_current_user_pm" invisible="1"/>
+                <field name="is_current_user_admin" invisible="1"/>
+                <field name="is_current_user_organizer" invisible="1"/>
+
+                <header>
+                    <!-- Confirm: draft -> confirmed -->
+                    <button name="action_confirm" string="Confirm"
+                            type="object" class="btn-primary"
+                            invisible="status != 'draft'"
+                            groups="task_project_management.group_project_manager,task_project_management.group_admin_manager,task_project_management.group_manager"/>
+
+                    <!-- Start Meeting: confirmed -> in_progress -->
+                    <button name="action_start" string="Start Meeting"
+                            type="object" class="btn-primary"
+                            invisible="status != 'confirmed'"
+                            groups="task_project_management.group_project_manager,task_project_management.group_admin_manager,task_project_management.group_manager"/>
+
+                    <!-- Complete: in_progress -> completed -->
+                    <button name="action_complete" string="Complete"
+                            type="object" class="btn-success"
+                            invisible="status != 'in_progress'"
+                            groups="task_project_management.group_project_manager,task_project_management.group_admin_manager,task_project_management.group_manager"/>
+
+                    <!-- Cancel: any non-cancelled -> cancelled -->
+                    <button name="action_cancel" string="Cancel"
+                            type="object" class="btn-danger"
+                            invisible="status in ('cancelled', 'completed')"
+                            groups="task_project_management.group_project_manager,task_project_management.group_admin_manager,task_project_management.group_manager"/>
+
+                    <!-- Reset to Draft: cancelled -> draft -->
+                    <button name="action_reset_draft" string="Reset to Draft"
+                            type="object" class="btn-secondary"
+                            invisible="status != 'cancelled'"
+                            groups="task_project_management.group_project_manager,task_project_management.group_admin_manager,task_project_management.group_manager"/>
+
+                    <field name="status" widget="statusbar"
+                           statusbar_visible="draft,confirmed,in_progress,completed"/>
+                </header>
+
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Meeting Title"/>
+                        </h1>
+                    </div>
+
+                    <group>
+                        <group string="Meeting Details">
+                            <field name="project_id" options="{'no_create': True}"/>
+                            <field name="task_id"
+                                   domain="[('project_id', '=', project_id)]"
+                                   options="{'no_create': True}"/>
+                            <field name="meeting_type"/>
+                            <field name="meeting_mode"/>
+                            <field name="location"
+                                   invisible="meeting_mode == 'online'"/>
+                            <field name="meeting_link" widget="url"
+                                   placeholder="https://meet.google.com/..."
+                                   invisible="meeting_mode == 'in_person'"/>
+                        </group>
+                        <group string="Schedule">
+                            <field name="organizer_id" options="{'no_create': True}"/>
+                            <field name="date"/>
+                            <field name="time_from" widget="float_time"/>
+                            <field name="time_to" widget="float_time"/>
+                            <field name="duration" widget="float_time"/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <page string="Attendees" name="attendees">
+                            <field name="attendee_ids" widget="many2many_tags"
+                                   options="{'no_create': True}"/>
+                        </page>
+                        <page string="Agenda" name="agenda">
+                            <field name="agenda" type="html"/>
+                        </page>
+                        <page string="Minutes" name="minutes">
+                            <field name="minutes" type="html"/>
+                        </page>
+                    </notebook>
+                </sheet>
+
+                <!-- Chatter -->
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- ============================================================ -->
+    <!-- Meeting Search View                                           -->
+    <!-- ============================================================ -->
+    <record id="view_meeting_search" model="ir.ui.view">
+        <field name="name">task.management.meeting.search</field>
+        <field name="model">task.management.meeting</field>
+        <field name="arch" type="xml">
+            <search string="Search Meetings">
+                <!-- Search fields -->
+                <field name="name"/>
+                <field name="project_id"/>
+                <field name="organizer_id"/>
+                <field name="task_id"/>
+
+                <!-- Status filters -->
+                <filter name="filter_draft" string="Draft"
+                        domain="[('status', '=', 'draft')]"/>
+                <filter name="filter_confirmed" string="Confirmed"
+                        domain="[('status', '=', 'confirmed')]"/>
+                <filter name="filter_in_progress" string="In Progress"
+                        domain="[('status', '=', 'in_progress')]"/>
+                <filter name="filter_completed" string="Completed"
+                        domain="[('status', '=', 'completed')]"/>
+                <filter name="filter_cancelled" string="Cancelled"
+                        domain="[('status', '=', 'cancelled')]"/>
+                <separator/>
+
+                <!-- Date filters -->
+                <filter name="filter_today" string="Today"
+                        domain="[('date', '=', context_today().strftime('%Y-%m-%d'))]"/>
+                <filter name="filter_this_week" string="This Week"
+                        domain="[
+                            ('date', '>=', (context_today() - datetime.timedelta(days=(context_today().weekday() + 1) % 7)).strftime('%Y-%m-%d')),
+                            ('date', '&lt;=', (context_today() - datetime.timedelta(days=(context_today().weekday() + 1) % 7) + datetime.timedelta(days=6)).strftime('%Y-%m-%d'))
+                        ]"/>
+                <filter name="filter_upcoming" string="Upcoming"
+                        domain="[('date', '>=', context_today().strftime('%Y-%m-%d'))]"/>
+                <separator/>
+
+                <!-- Type filters -->
+                <filter name="filter_project_review" string="Project Review"
+                        domain="[('meeting_type', '=', 'project_review')]"/>
+                <filter name="filter_task_review" string="Task Review"
+                        domain="[('meeting_type', '=', 'task_review')]"/>
+                <filter name="filter_team_meeting" string="Team Meeting"
+                        domain="[('meeting_type', '=', 'team_meeting')]"/>
+                <separator/>
+
+                <!-- Mode filters -->
+                <filter name="filter_online" string="Online"
+                        domain="[('meeting_mode', '=', 'online')]"/>
+                <filter name="filter_in_person" string="In Person"
+                        domain="[('meeting_mode', '=', 'in_person')]"/>
+                <filter name="filter_hybrid" string="Hybrid"
+                        domain="[('meeting_mode', '=', 'hybrid')]"/>
+                <separator/>
+
+                <!-- Group by -->
+                <group expand="0" string="Group By">
+                    <filter name="group_project" string="Project"
+                            context="{'group_by': 'project_id'}"/>
+                    <filter name="group_status" string="Status"
+                            context="{'group_by': 'status'}"/>
+                    <filter name="group_type" string="Type"
+                            context="{'group_by': 'meeting_type'}"/>
+                    <filter name="group_date" string="Date"
+                            context="{'group_by': 'date'}"/>
+                    <filter name="group_organizer" string="Organizer"
+                            context="{'group_by': 'organizer_id'}"/>
+                    <filter name="group_mode" string="Mode"
+                            context="{'group_by': 'meeting_mode'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ============================================================ -->
+    <!-- Meeting Calendar View                                         -->
+    <!-- ============================================================ -->
+    <record id="view_meeting_calendar" model="ir.ui.view">
+        <field name="name">task.management.meeting.calendar</field>
+        <field name="model">task.management.meeting</field>
+        <field name="arch" type="xml">
+            <calendar string="Meetings"
+                      date_start="datetime_start"
+                      date_stop="datetime_end"
+                      color="meeting_type"
+                      mode="month">
+                <field name="name"/>
+                <field name="project_id"/>
+                <field name="organizer_id"/>
+            </calendar>
+        </field>
+    </record>
+
+    <!-- ============================================================ -->
+    <!-- Actions                                                       -->
+    <!-- ============================================================ -->
+
+    <!-- My Meetings (organizer or attendee = current user) -->
+    <record id="action_my_meetings" model="ir.actions.act_window">
+        <field name="name">My Meetings</field>
+        <field name="res_model">task.management.meeting</field>
+        <field name="view_mode">tree,form,calendar</field>
+        <field name="domain">[
+            '|',
+            ('organizer_id.user_id', '=', uid),
+            ('attendee_ids.user_id', '=', uid)
+        ]</field>
+        <field name="context">{
+            'search_default_filter_upcoming': 1,
+        }</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No meetings found
+            </p>
+            <p>Create your first meeting to get started.</p>
+        </field>
+    </record>
+
+    <!-- Project Meetings (PM's managed projects) -->
+    <record id="action_project_meetings" model="ir.actions.act_window">
+        <field name="name">Project Meetings</field>
+        <field name="res_model">task.management.meeting</field>
+        <field name="view_mode">tree,form,calendar</field>
+        <field name="domain">[
+            ('project_id.project_manager_ids.user_id', '=', uid)
+        ]</field>
+        <field name="context">{
+            'search_default_group_project': 1,
+        }</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No project meetings found
+            </p>
+            <p>Schedule a meeting for one of your projects.</p>
+        </field>
+    </record>
+
+    <!-- All Meetings (Admin) -->
+    <record id="action_all_meetings" model="ir.actions.act_window">
+        <field name="name">All Meetings</field>
+        <field name="res_model">task.management.meeting</field>
+        <field name="view_mode">tree,form,calendar</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No meetings found
+            </p>
+            <p>Create a meeting to get started.</p>
+        </field>
+    </record>
+
+    <!-- Manager Meetings (oversight + PM-managed projects) -->
+    <record id="action_manager_meetings" model="ir.actions.act_window">
+        <field name="name">Meetings</field>
+        <field name="res_model">task.management.meeting</field>
+        <field name="view_mode">tree,form,calendar</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No meetings found
+            </p>
+            <p>Schedule a meeting to get started.</p>
+        </field>
+    </record>
+
+</odoo>
