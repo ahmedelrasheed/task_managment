@@ -1,4 +1,5 @@
-from odoo import models, fields, api
+from odoo import models, fields, api, _
+from odoo.exceptions import UserError, AccessDenied
 
 
 class ResUsers(models.Model):
@@ -53,6 +54,8 @@ class ResUsers(models.Model):
         Member = self.env['task.management.member'].sudo()
         group_admin = self.env.ref(
             'task_project_management.group_admin_manager')
+        group_manager = self.env.ref(
+            'task_project_management.group_manager')
         group_pm = self.env.ref(
             'task_project_management.group_project_manager')
         group_member = self.env.ref(
@@ -64,6 +67,8 @@ class ResUsers(models.Model):
                 continue
             if group_admin in user.groups_id:
                 new_role = 'admin_manager'
+            elif group_manager in user.groups_id:
+                new_role = 'manager'
             elif group_pm in user.groups_id:
                 new_role = 'project_manager'
             elif group_member in user.groups_id:
@@ -72,3 +77,32 @@ class ResUsers(models.Model):
                 continue
             if member.role != new_role:
                 member.write({'role': new_role})
+
+    def preference_change_password(self):
+        """Override to use our single-page password change wizard."""
+        return {
+            'type': 'ir.actions.act_window',
+            'target': 'new',
+            'res_model': 'change.password.own',
+            'view_mode': 'form',
+        }
+
+
+class ChangePasswordOwn(models.TransientModel):
+    _inherit = 'change.password.own'
+
+    current_password = fields.Char(string='Current Password')
+
+    def change_password(self):
+        """Override to verify current password inline (no separate security check)."""
+        if not self.current_password:
+            raise UserError(_('Please enter your current password.'))
+        try:
+            self.env['res.users'].sudo()._check_credentials(
+                self.current_password, {'interactive': True})
+        except AccessDenied:
+            raise UserError(
+                _('Current password is incorrect.'))
+        self.env.user._change_password(self.new_password)
+        self.unlink()
+        return {'type': 'ir.actions.client', 'tag': 'reload'}

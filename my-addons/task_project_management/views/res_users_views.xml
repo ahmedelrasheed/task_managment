@@ -23,4 +23,17 @@
         </field>
     </record>
 
+    <!-- Override Change Password wizard: single page with all fields -->
+    <record id="change_password_own_form_inherit" model="ir.ui.view">
+        <field name="name">change.password.own.form.inherit</field>
+        <field name="model">change.password.own</field>
+        <field name="inherit_id" ref="base.change_password_own_form"/>
+        <field name="arch" type="xml">
+            <field name="new_password" position="before">
+                <field name="current_password" password="True" required="1"
+                       placeholder="Enter current password"/>
+            </field>
+        </field>
+    </record>
+
 </odoo>
