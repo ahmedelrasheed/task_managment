@@ -56,7 +56,7 @@
                                 <field name="project_id" string="Project"
                                        readonly="id"
                                        required="approval_status == 'assigned'"
-                                       domain="[('status', 'in', ['waiting', 'active'])]"
+                                       domain="[('status', 'in', ['waiting', 'active']), ('project_manager_ids.user_id', '=', uid)]"
                                        options="{'no_create': True}"/>
                                 <field name="phase_id"
                                        readonly="id"

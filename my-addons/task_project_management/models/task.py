@@ -117,7 +117,9 @@ class TaskManagementTask(models.Model):
         is_pm = self.env.user.has_group(
             'task_project_management.group_project_manager') or \
             self.env.user.has_group(
-            'task_project_management.group_admin_manager')
+            'task_project_management.group_admin_manager') or \
+            self.env.user.has_group(
+            'task_project_management.group_manager')
         for task in self:
             task.is_current_user_pm = is_pm
 
@@ -138,13 +140,15 @@ class TaskManagementTask(models.Model):
 
     @api.depends_context('uid')
     def _compute_can_assign(self):
-        """PMs and Admins can assign tasks."""
+        """PMs, Admins, and Managers can assign tasks."""
         is_pm = self.env.user.has_group(
             'task_project_management.group_project_manager')
         is_admin = self.env.user.has_group(
             'task_project_management.group_admin_manager')
+        is_manager = self.env.user.has_group(
+            'task_project_management.group_manager')
         for task in self:
-            task.can_assign = is_pm or is_admin
+            task.can_assign = is_pm or is_admin or is_manager
 
     @api.depends('member_id')
     @api.depends_context('uid')

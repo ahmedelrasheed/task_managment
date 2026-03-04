@@ -62,7 +62,7 @@
                         </page>
                         <page string="Project Managers" name="managers">
                             <field name="project_manager_ids"
-                                   domain="[('id', 'not in', member_ids), ('user_id.groups_id', 'in', %(task_project_management.group_project_manager)d)]"
+                                   domain="[('id', 'not in', member_ids), ('user_id.groups_id', 'in', [%(task_project_management.group_project_manager)d, %(task_project_management.group_manager)d])]"
                                    readonly="id and not is_admin_user">
                                 <tree no_open="1">
                                     <field name="name"/>

@@ -225,19 +225,43 @@
     <!-- Manager Record Rules (oversight via project.manager_ids)     -->
     <!-- ============================================================ -->
 
-    <!-- Manager: tasks from admin-assigned projects -->
+    <!-- Manager READ: tasks in supervised + managed projects -->
     <record id="rule_task_manager" model="ir.rule">
-        <field name="name">Task: Manager sees tasks from assigned projects</field>
+        <field name="name">Task: Manager reads supervised + managed project tasks</field>
         <field name="model_id" ref="model_task_management_task"/>
-        <field name="domain_force">[('project_id.manager_ids.user_id', '=', user.id)]</field>
+        <field name="domain_force">[
+            '|',
+            ('project_id.manager_ids.user_id', '=', user.id),
+            ('project_id.project_manager_ids.user_id', '=', user.id)
+        ]</field>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
         <field name="groups" eval="[(4, ref('group_manager'))]"/>
     </record>
 
-    <!-- Manager: projects assigned by admin -->
+    <!-- Manager WRITE: only tasks in managed projects (project_manager_ids) -->
+    <record id="rule_task_manager_write" model="ir.rule">
+        <field name="name">Task: Manager writes only managed project tasks</field>
+        <field name="model_id" ref="model_task_management_task"/>
+        <field name="domain_force">[('project_id.project_manager_ids.user_id', '=', user.id)]</field>
+        <field name="perm_read" eval="False"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="False"/>
+        <field name="groups" eval="[(4, ref('group_manager'))]"/>
+    </record>
+
+    <!-- Manager: supervised + managed projects -->
     <record id="rule_project_manager_role" model="ir.rule">
-        <field name="name">Project: Manager sees assigned projects</field>
+        <field name="name">Project: Manager sees supervised + managed projects</field>
         <field name="model_id" ref="model_task_management_project"/>
-        <field name="domain_force">[('manager_ids.user_id', '=', user.id)]</field>
+        <field name="domain_force">[
+            '|',
+            ('manager_ids.user_id', '=', user.id),
+            ('project_manager_ids.user_id', '=', user.id)
+        ]</field>
         <field name="groups" eval="[(4, ref('group_manager'))]"/>
     </record>
 
@@ -249,19 +273,27 @@
         <field name="groups" eval="[(4, ref('group_manager'))]"/>
     </record>
 
-    <!-- Manager: phases from assigned projects -->
+    <!-- Manager: phases in supervised + managed projects -->
     <record id="rule_phase_manager" model="ir.rule">
-        <field name="name">Phase: Manager sees phases of assigned projects</field>
+        <field name="name">Phase: Manager sees supervised + managed project phases</field>
         <field name="model_id" ref="model_task_management_project_phase"/>
-        <field name="domain_force">[('project_id.manager_ids.user_id', '=', user.id)]</field>
+        <field name="domain_force">[
+            '|',
+            ('project_id.manager_ids.user_id', '=', user.id),
+            ('project_id.project_manager_ids.user_id', '=', user.id)
+        ]</field>
         <field name="groups" eval="[(4, ref('group_manager'))]"/>
     </record>
 
-    <!-- Manager: audit from assigned project tasks -->
+    <!-- Manager: audit in supervised + managed projects -->
     <record id="rule_audit_manager" model="ir.rule">
-        <field name="name">Audit: Manager sees audit of assigned projects</field>
+        <field name="name">Audit: Manager sees supervised + managed project audit</field>
         <field name="model_id" ref="model_task_management_task_audit"/>
-        <field name="domain_force">[('task_id.project_id.manager_ids.user_id', '=', user.id)]</field>
+        <field name="domain_force">[
+            '|',
+            ('task_id.project_id.manager_ids.user_id', '=', user.id),
+            ('task_id.project_id.project_manager_ids.user_id', '=', user.id)
+        ]</field>
         <field name="groups" eval="[(4, ref('group_manager'))]"/>
     </record>
 
