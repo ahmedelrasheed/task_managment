@@ -526,4 +526,167 @@
         </Layout>
     </t>
 
+    <!-- ============================================================ -->
+    <!-- Overall Performance Dashboard                                -->
+    <!-- ============================================================ -->
+    <t t-name="task_project_management.OverallPerformanceDashboard">
+        <Layout display="display" className="'o_action task_dashboard overall_performance_dashboard'">
+            <div class="container-fluid py-3">
+
+                <!-- Header -->
+                <div class="dashboard-header d-flex justify-content-between align-items-center p-3 mb-4">
+                    <div class="header-left d-flex align-items-center gap-3">
+                        <img class="company-logo" src="/web/binary/company_logo" t-att-alt="_t('Logo')"
+                             style="height: 50px; width: auto;"/>
+                        <div>
+                            <h2 class="dashboard-title text-white mb-0">
+                                Overall Performance
+                            </h2>
+                            <p class="text-white-50 mb-0" t-esc="state.companyName"/>
+                        </div>
+                    </div>
+                    <div class="header-actions d-flex gap-2">
+                        <button class="btn btn-outline-light" t-on-click="onExportCSV">
+                            <i class="fa fa-file-text-o"/> CSV
+                        </button>
+                        <button class="btn btn-outline-light" t-on-click="onExportPDF">
+                            <i class="fa fa-file-pdf-o"/> PDF
+                        </button>
+                        <button class="btn btn-outline-light" t-on-click="onExportImage">
+                            <i class="fa fa-image"/> PNG
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Period Selector -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex flex-wrap align-items-center gap-3">
+                                    <span class="fw-bold text-primary">
+                                        <i class="fa fa-calendar me-1"/>
+                                        Period:
+                                    </span>
+                                    <div class="btn-group period-selector" role="group">
+                                        <button t-attf-class="btn period-pill #{state.period === 'today' ? 'active' : ''}"
+                                                t-on-click="() => this.onPeriodChange('today')">
+                                            Today
+                                        </button>
+                                        <button t-attf-class="btn period-pill #{state.period === 'week' ? 'active' : ''}"
+                                                t-on-click="() => this.onPeriodChange('week')">
+                                            This Week
+                                        </button>
+                                        <button t-attf-class="btn period-pill #{state.period === 'month' ? 'active' : ''}"
+                                                t-on-click="() => this.onPeriodChange('month')">
+                                            This Month
+                                        </button>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2 ms-auto">
+                                        <label class="mb-0 text-muted small">From:</label>
+                                        <input type="date" class="form-control form-control-sm date-input"
+                                               t-att-value="state.dateFrom"
+                                               t-on-change="onDateFromChange"/>
+                                        <label class="mb-0 text-muted small">To:</label>
+                                        <input type="date" class="form-control form-control-sm date-input"
+                                               t-att-value="state.dateTo"
+                                               t-on-change="onDateToChange"/>
+                                        <button class="btn btn-primary btn-sm apply-btn"
+                                                t-on-click="onApplyCustom">
+                                            Apply
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="mt-2 text-muted small" t-if="state.dateFrom and state.dateTo">
+                                    <i class="fa fa-info-circle me-1"/>
+                                    Showing data from
+                                    <strong t-esc="state.dateFrom"/>
+                                    to
+                                    <strong t-esc="state.dateTo"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading Spinner -->
+                <div t-if="state.loading" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+
+                <!-- Member Performance Table -->
+                <div t-if="!state.loading" class="row">
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-white">
+                                <h5 class="mb-0 text-primary">
+                                    <i class="fa fa-users me-2"/>
+                                    Member Performance
+                                </h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <div t-if="!state.members.length" class="text-center py-5 text-muted">
+                                    <i class="fa fa-inbox fa-3x mb-3 d-block"/>
+                                    <p>No data found for the selected period.</p>
+                                </div>
+                                <div t-if="state.members.length" class="table-responsive">
+                                    <table class="table table-hover mb-0 performance-table">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Member Name</th>
+                                                <th>Total Hours</th>
+                                                <th>Approved Hours</th>
+                                                <th>Total Tasks</th>
+                                                <th>Approved</th>
+                                                <th>Rejected</th>
+                                                <th>Pending</th>
+                                                <th>Delayed Entries</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-foreach="state.members" t-as="member" t-key="member.id">
+                                                <tr>
+                                                    <td t-esc="member_index + 1"/>
+                                                    <td>
+                                                        <a href="#" class="fw-bold text-primary member-link"
+                                                           t-on-click.prevent="() => this.onMemberClick(member.id)"
+                                                           t-esc="member.name"/>
+                                                    </td>
+                                                    <td t-esc="member.total_hours"/>
+                                                    <td t-esc="member.approved_hours"/>
+                                                    <td>
+                                                        <span class="badge text-bg-primary" t-esc="member.total_tasks"/>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge text-bg-success" t-esc="member.approved"/>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge text-bg-danger" t-esc="member.rejected"/>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge text-bg-warning" t-esc="member.pending"/>
+                                                    </td>
+                                                    <td>
+                                                        <span t-if="member.delayed > 0"
+                                                              class="text-danger fw-bold"
+                                                              t-esc="member.delayed"/>
+                                                        <span t-else="">0</span>
+                                                    </td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </Layout>
+    </t>
+
 </templates>

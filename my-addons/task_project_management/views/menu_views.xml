@@ -335,6 +335,18 @@
               sequence="10"
               groups="task_project_management.group_admin_manager,task_project_management.group_manager"/>
 
+    <record id="action_overall_performance_dashboard" model="ir.actions.client">
+        <field name="name">Overall Performance</field>
+        <field name="tag">task_project_management.overall_performance_dashboard</field>
+    </record>
+
+    <menuitem id="menu_overall_performance"
+              name="Overall Performance"
+              parent="menu_admin_parent"
+              action="action_overall_performance_dashboard"
+              sequence="15"
+              groups="task_project_management.group_admin_manager,task_project_management.group_manager"/>
+
     <menuitem id="menu_audit_trail"
               name="Audit Trail"
               parent="menu_admin_parent"

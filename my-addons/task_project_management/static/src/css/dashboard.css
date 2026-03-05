@@ -1024,6 +1024,114 @@ body.o_hide_apps_menu .o_navbar_apps_menu {
 }
 
 /* ============================================================
+   11b. OVERALL PERFORMANCE DASHBOARD
+   ============================================================ */
+
+/* Ensure full scroll for overall performance dashboard */
+.overall_performance_dashboard.o_action {
+    overflow: auto !important;
+    height: 100% !important;
+}
+
+.overall_performance_dashboard .o_content {
+    overflow-y: auto !important;
+    height: 100% !important;
+}
+
+.overall_performance_dashboard .o_content > div {
+    padding-bottom: 80px;
+}
+
+.overall_performance_dashboard .container-fluid {
+    padding-bottom: 80px;
+}
+
+/* Period selector pills */
+.overall_performance_dashboard .period-selector {
+    gap: 4px;
+}
+
+.overall_performance_dashboard .period-pill {
+    border: 2px solid #0B3D91;
+    color: #0B3D91;
+    border-radius: 20px;
+    padding: 4px 18px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    background: transparent;
+    transition: all 0.2s ease;
+    margin: 0 2px;
+}
+
+.overall_performance_dashboard .period-pill:hover {
+    background: #E8EEF7;
+    color: #0B3D91;
+}
+
+.overall_performance_dashboard .period-pill.active {
+    background: #0B3D91;
+    color: #fff;
+    border-color: #0B3D91;
+}
+
+/* Date inputs */
+.overall_performance_dashboard .date-input {
+    border: 1px solid #0B3D91;
+    border-radius: 8px;
+    padding: 4px 10px;
+    max-width: 160px;
+    font-size: 0.85rem;
+}
+
+.overall_performance_dashboard .date-input:focus {
+    border-color: #1E5BBF;
+    box-shadow: 0 0 0 0.2rem rgba(11, 61, 145, 0.15);
+}
+
+/* Apply button */
+.overall_performance_dashboard .apply-btn {
+    border-radius: 20px;
+    padding: 4px 20px;
+    font-weight: 600;
+}
+
+/* Performance table */
+.overall_performance_dashboard .performance-table thead th {
+    background: #0B3D91;
+    color: #fff;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    padding: 10px 12px;
+    border: none;
+}
+
+.overall_performance_dashboard .performance-table tbody tr {
+    transition: background 0.15s ease;
+}
+
+.overall_performance_dashboard .performance-table tbody tr:hover {
+    background: #E8EEF7 !important;
+}
+
+.overall_performance_dashboard .performance-table tbody td {
+    padding: 10px 12px;
+    vertical-align: middle;
+    font-size: 0.88rem;
+}
+
+.overall_performance_dashboard .member-link {
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.15s ease;
+}
+
+.overall_performance_dashboard .member-link:hover {
+    color: #1E5BBF !important;
+    text-decoration: underline;
+}
+
+/* ============================================================
    12. RTL SUPPORT
    ============================================================ */
 html[dir="rtl"] .task_dashboard .text-end {
@@ -1037,6 +1145,11 @@ html[dir="rtl"] .task_dashboard .me-2 {
 
 html[dir="rtl"] .task_dashboard .dashboard-header {
     flex-direction: row-reverse;
+}
+
+html[dir="rtl"] .overall_performance_dashboard .ms-auto {
+    margin-left: 0 !important;
+    margin-right: auto !important;
 }
 
 /* ============================================================
@@ -1576,6 +1689,21 @@ body.task-font-xlarge .o_list_view thead th {
 
     .task_dashboard .card {
         margin-bottom: 10px;
+    }
+
+    /* Overall Performance: stack period controls vertically */
+    .overall_performance_dashboard .card-body .d-flex.flex-wrap {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+
+    .overall_performance_dashboard .ms-auto {
+        margin-left: 0 !important;
+        width: 100%;
+    }
+
+    .overall_performance_dashboard .date-input {
+        max-width: 100%;
     }
 
     /* === FORMS: Better touch targets === */

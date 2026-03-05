@@ -55,24 +55,24 @@
                         <group>
                             <group>
                                 <field name="project_id" string="Project"
-                                       readonly="id"
+                                       readonly="id and (approval_status != 'assigned' or not is_current_user_project_pm)"
                                        required="approval_status == 'assigned'"
                                        domain="[('status', 'in', ['waiting', 'active']), ('project_manager_ids.user_id', '=', uid)]"
                                        options="{'no_create': True}"/>
                                 <field name="phase_id"
-                                       readonly="id"
+                                       readonly="id and (approval_status != 'assigned' or not is_current_user_project_pm)"
                                        domain="[('project_id', '=', project_id), ('is_active', '=', True), ('completion_rate', '&lt;', 100)]"
                                        options="{'no_create': True}"/>
                                 <field name="assignment_name" string="Task Name"
-                                       readonly="id"
+                                       readonly="id and (approval_status != 'assigned' or not is_current_user_project_pm)"
                                        required="approval_status == 'assigned'"/>
                                 <field name="due_date"
-                                       readonly="id"/>
+                                       readonly="id and (approval_status != 'assigned' or not is_current_user_project_pm)"/>
                             </group>
                             <group>
                                 <field name="project_member_ids" invisible="1"/>
                                 <field name="member_id" string="Assigned To"
-                                       readonly="id"
+                                       readonly="id and (approval_status != 'assigned' or not is_current_user_project_pm)"
                                        required="approval_status == 'assigned'"
                                        domain="[('id', 'in', project_member_ids)]"/>
                                 <field name="assigned_by_id" string="Assigned By"
@@ -83,13 +83,13 @@
                         <group>
                             <field name="assignment_description"
                                    string="Task Details"
-                                   readonly="id"/>
+                                   readonly="id and (approval_status != 'assigned' or not is_current_user_project_pm)"/>
                         </group>
                         <group>
                             <field name="assignment_attachment_ids"
                                    widget="many2many_binary"
                                    string="Reference Files"
-                                   readonly="id"/>
+                                   readonly="id and (approval_status != 'assigned' or not is_current_user_project_pm)"/>
                         </group>
                     </div>
 

@@ -581,6 +581,14 @@ class TaskManagementTask(models.Model):
                         'approval_status', 'manager_comment',
                         'message_follower_ids', 'message_ids',
                     }
+                    # PM can also edit assignment fields while status is 'assigned'
+                    if task.approval_status == 'assigned':
+                        pm_allowed |= {
+                            'project_id', 'phase_id', 'member_id',
+                            'assignment_name', 'due_date',
+                            'assignment_description',
+                            'assignment_attachment_ids',
+                        }
                     for f in list(set(vals.keys()) - pm_allowed):
                         vals.pop(f, None)
                     if not vals:
@@ -1479,6 +1487,259 @@ class TaskManagementTask(models.Model):
         today = fields.Date.context_today(self)
         html = self._build_admin_dashboard_html(data, company, today)
         return self._html_to_pdf(html, f'admin_dashboard_{today}.pdf')
+
+    # ----------------------------------------------------------------
+    # Overall Performance Dashboard
+    # ----------------------------------------------------------------
+
+    @api.model
+    def get_overall_performance_data(self, period='month', date_from=False, date_to=False):
+        """Return per-member performance data for the given period.
+
+        Admin sees all members; Manager sees members in supervised/managed
+        projects (or all if supervise_all_projects is True).
+        """
+        today = fields.Date.context_today(self)
+        Member = self.env['task.management.member'].sudo()
+
+        # --- Determine date range ---
+        if period == 'today':
+            d_from = d_to = today
+        elif period == 'week':
+            week_start = today - timedelta(days=(today.weekday() + 1) % 7)
+            d_from = week_start
+            d_to = week_start + timedelta(days=6)
+        elif period == 'custom' and date_from and date_to:
+            d_from = fields.Date.from_string(date_from)
+            d_to = fields.Date.from_string(date_to)
+        else:  # month (default)
+            d_from = today.replace(day=1)
+            if today.month == 12:
+                d_to = today.replace(day=31)
+            else:
+                d_to = today.replace(month=today.month + 1, day=1) - timedelta(days=1)
+
+        # --- Scope members by role ---
+        is_admin = self.env.user.has_group(
+            'task_project_management.group_admin_manager')
+        is_manager = self.env.user.has_group(
+            'task_project_management.group_manager')
+
+        # Only show regular members (exclude admin, manager, PM)
+        member_domain = [('role', '=', 'member')]
+
+        members = Member.browse()  # empty default
+
+        if is_admin or is_manager:
+            if is_manager and not is_admin:
+                current_member = Member.search(
+                    [('user_id', '=', self.env.uid)], limit=1)
+                if current_member and current_member.supervise_all_projects:
+                    members = Member.search(member_domain)
+                elif current_member:
+                    projects = (current_member.supervised_project_ids
+                                | current_member.managed_project_ids)
+                    member_ids = set()
+                    for proj in projects:
+                        member_ids |= set(proj.member_ids.ids)
+                    if member_ids:
+                        members = Member.browse(list(member_ids)).filtered(
+                            lambda m: m.role == 'member')
+                    else:
+                        members = Member.search(member_domain)
+                else:
+                    members = Member.search(member_domain)
+            else:
+                # Admin sees all members only
+                members = Member.search(member_domain)
+
+        # --- Build per-member stats ---
+        members_data = []
+        all_tasks = self.sudo().search([
+            ('date', '>=', d_from),
+            ('date', '<=', d_to),
+        ])
+        for m in members:
+            tasks = all_tasks.filtered(lambda t, mid=m.id: t.member_id.id == mid)
+            total_hours = sum(tasks.mapped('duration_hours'))
+            approved_tasks = tasks.filtered(
+                lambda t: t.approval_status == 'approved')
+            approved_hours = sum(approved_tasks.mapped('duration_hours'))
+            rejected = len(tasks.filtered(
+                lambda t: t.approval_status == 'rejected'))
+            pending = len(tasks.filtered(
+                lambda t: t.approval_status == 'pending'))
+            late = len(tasks.filtered(lambda t: t.is_late_entry))
+
+            members_data.append({
+                'id': m.id,
+                'name': m.name,
+                'total_hours': f'{total_hours:.2f}',
+                'approved_hours': f'{approved_hours:.2f}',
+                'total_tasks': len(tasks),
+                'approved': len(approved_tasks),
+                'rejected': rejected,
+                'pending': pending,
+                'delayed': late,
+            })
+
+        return {
+            'members': members_data,
+            'date_from': str(d_from),
+            'date_to': str(d_to),
+            'period': period,
+        }
+
+    @api.model
+    def export_overall_performance_csv(self, period='month', date_from=False, date_to=False):
+        """Export overall performance data as CSV."""
+        data = self.get_overall_performance_data(period, date_from, date_to)
+        company = self.env.company.name
+        today = fields.Date.context_today(self)
+
+        output = io.StringIO()
+        writer = csv.writer(output)
+
+        writer.writerow([_('OVERALL PERFORMANCE REPORT')])
+        writer.writerow([])
+        writer.writerow([_('Company:'), company])
+        writer.writerow([_('Report Date:'), str(today)])
+        writer.writerow([_('Period:'), f'{data["date_from"]} — {data["date_to"]}'])
+        writer.writerow([])
+
+        writer.writerow([
+            _('No.'), _('Member Name'), _('Total Hours'),
+            _('Approved Hours'), _('Total Tasks'), _('Approved'),
+            _('Rejected'), _('Pending'), _('Delayed Entries'),
+        ])
+        t_hours = t_ahours = t_tasks = t_app = t_rej = t_pend = t_late = 0
+        for i, m in enumerate(data.get('members', []), 1):
+            writer.writerow([
+                i, m['name'], m['total_hours'], m['approved_hours'],
+                m['total_tasks'], m['approved'], m['rejected'],
+                m['pending'], m['delayed'],
+            ])
+            t_hours += float(m['total_hours'])
+            t_ahours += float(m['approved_hours'])
+            t_tasks += m['total_tasks']
+            t_app += m['approved']
+            t_rej += m['rejected']
+            t_pend += m['pending']
+            t_late += m['delayed']
+
+        writer.writerow([])
+        writer.writerow([
+            '', _('TOTAL'), f'{t_hours:.2f}', f'{t_ahours:.2f}',
+            t_tasks, t_app, t_rej, t_pend, t_late,
+        ])
+        writer.writerow([])
+        writer.writerow([_('END OF REPORT')])
+
+        csv_data = output.getvalue().encode('utf-8-sig')
+        return {
+            'file_content': base64.b64encode(csv_data).decode(),
+            'filename': f'overall_performance_{today}.csv',
+        }
+
+    @api.model
+    def _build_overall_performance_html(self, data, company, today):
+        """Build HTML for overall performance export (shared by PNG/PDF)."""
+        logo_html = ''
+        if company.logo:
+            logo_b64 = (company.logo.decode()
+                        if isinstance(company.logo, bytes)
+                        else company.logo)
+            logo_html = (
+                f'<img src="data:image/png;base64,{logo_b64}"'
+                f' style="height:50px;width:auto;"/>')
+
+        member_rows = ''
+        t_hours = t_ahours = t_tasks = t_app = t_rej = t_pend = t_late = 0
+        for i, m in enumerate(data.get('members', []), 1):
+            member_rows += (
+                f'<tr><td>{i}</td><td>{m["name"]}</td>'
+                f'<td>{m["total_hours"]}</td><td>{m["approved_hours"]}</td>'
+                f'<td>{m["total_tasks"]}</td>'
+                f'<td style="color:#5cb85c">{m["approved"]}</td>'
+                f'<td style="color:#d9534f">{m["rejected"]}</td>'
+                f'<td style="color:#f0ad4e">{m["pending"]}</td>'
+                f'<td style="color:#d9534f">{m["delayed"]}</td></tr>')
+            t_hours += float(m['total_hours'])
+            t_ahours += float(m['approved_hours'])
+            t_tasks += m['total_tasks']
+            t_app += m['approved']
+            t_rej += m['rejected']
+            t_pend += m['pending']
+            t_late += m['delayed']
+
+        totals_row = (
+            f'<tr style="font-weight:bold;background:#E8EEF7">'
+            f'<td></td><td>{_("TOTAL")}</td>'
+            f'<td>{t_hours:.2f}</td><td>{t_ahours:.2f}</td>'
+            f'<td>{t_tasks}</td><td>{t_app}</td>'
+            f'<td>{t_rej}</td><td>{t_pend}</td><td>{t_late}</td></tr>')
+
+        is_rtl = self.env.lang and self.env.lang.startswith('ar')
+        dir_attr = ' dir="rtl"' if is_rtl else ''
+        th_align = 'right' if is_rtl else 'left'
+
+        html = f'''<!DOCTYPE html>
+<html{dir_attr}><head><meta charset="utf-8"/>
+<style>
+    body {{ font-family: Arial, sans-serif; margin: 20px; background: #fff; }}
+    .header {{ border-bottom: 3px solid #0B3D91; padding-bottom: 15px;
+               margin-bottom: 20px; overflow: hidden; }}
+    .header-logo {{ float: {"right" if is_rtl else "left"}; margin-{"left" if is_rtl else "right"}: 15px; }}
+    .header h1 {{ color: #0B3D91; margin: 0; font-size: 22px; }}
+    .header p {{ color: #666; margin: 3px 0 0 0; font-size: 12px; }}
+    h2 {{ color: #0B3D91; font-size: 16px; margin-top: 20px;
+          border-bottom: 2px solid #0B3D91; padding-bottom: 5px; }}
+    table.data {{ width: 100%; border-collapse: collapse; margin-top: 8px; }}
+    table.data th {{ background: #0B3D91; color: #fff; padding: 8px;
+          text-align: {th_align}; font-size: 12px; }}
+    table.data td {{ padding: 6px 8px; border-bottom: 1px solid #ddd; font-size: 12px; }}
+    table.data tr:nth-child(even) {{ background: #f8f9fa; }}
+    .footer {{ clear: both; margin-top: 30px; padding-top: 8px; border-top: 1px solid #ddd;
+               color: #999; font-size: 10px; text-align: center; }}
+</style></head><body>
+    <div class="header">
+        <div class="header-logo">{logo_html}</div>
+        <div>
+            <h1>{_("Overall Performance Report")}</h1>
+            <p>{company.name} | {_("Period:")} {data["date_from"]} — {data["date_to"]} | {_("Generated:")} {today}</p>
+        </div>
+    </div>
+
+    <h2>{_("Member Performance")}</h2>
+    <table class="data"><thead><tr>
+        <th>#</th><th>{_("Member Name")}</th><th>{_("Total Hours")}</th>
+        <th>{_("Approved Hours")}</th><th>{_("Total Tasks")}</th>
+        <th>{_("Approved")}</th><th>{_("Rejected")}</th>
+        <th>{_("Pending")}</th><th>{_("Delayed Entries")}</th>
+    </tr></thead><tbody>{member_rows}{totals_row}</tbody></table>
+
+    <div class="footer">{_("Generated by")} {company.name} | {_("Overall Performance")} | {today}</div>
+</body></html>'''
+
+        return html
+
+    @api.model
+    def export_overall_performance_png(self, period='month', date_from=False, date_to=False):
+        """Export overall performance as PNG image."""
+        data = self.get_overall_performance_data(period, date_from, date_to)
+        company = self.env.company
+        today = fields.Date.context_today(self)
+        html = self._build_overall_performance_html(data, company, today)
+        return self._html_to_png(html, f'overall_performance_{today}.png')
+
+    @api.model
+    def export_overall_performance_pdf(self, period='month', date_from=False, date_to=False):
+        """Export overall performance as PDF."""
+        data = self.get_overall_performance_data(period, date_from, date_to)
+        company = self.env.company
+        today = fields.Date.context_today(self)
+        html = self._build_overall_performance_html(data, company, today)
+        return self._html_to_pdf(html, f'overall_performance_{today}.pdf')
 
     @api.model
     def _html_to_png(self, html_content, filename):

@@ -24,7 +24,8 @@ class TaskManagementTaskAudit(models.Model):
     ], string='New Status', required=True)
     changed_by = fields.Many2one(
         'res.users', string='Changed By',
-        required=True, default=lambda self: self.env.uid,
+        default=lambda self: self.env.uid,
+        ondelete='set null',
     )
     changed_at = fields.Datetime(
         string='Changed At',
