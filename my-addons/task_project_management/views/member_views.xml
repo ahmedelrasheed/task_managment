@@ -107,6 +107,7 @@
         <field name="model">task.management.member</field>
         <field name="arch" type="xml">
             <tree string="Members">
+                <field name="sequence" widget="handle"/>
                 <field name="name"/>
                 <field name="email"/>
                 <field name="phone"/>

@@ -7,7 +7,9 @@ class TaskManagementMember(models.Model):
     _description = 'Company Staff'
     _inherit = ['mail.thread', 'mail.activity.mixin']
     _rec_name = 'name'
+    _order = 'sequence, id'
 
+    sequence = fields.Integer(string='Sequence', default=10)
     name = fields.Char(string='Name', required=True, tracking=True)
     email = fields.Char(string='Email', required=True, tracking=True)
     phone = fields.Char(string='Phone')
