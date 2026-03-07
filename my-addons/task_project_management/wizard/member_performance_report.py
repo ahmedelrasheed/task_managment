@@ -6,6 +6,7 @@ import tempfile
 
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError
+from calendar import monthrange
 from datetime import timedelta
 
 
@@ -37,7 +38,7 @@ class MemberPerformanceReport(models.TransientModel):
     approved_tasks = fields.Integer(
         string='Approved Tasks', compute='_compute_stats')
     rejected_tasks = fields.Integer(
-        string='Rejected Tasks', compute='_compute_stats')
+        string='Revision Requests', compute='_compute_stats')
     pending_tasks = fields.Integer(
         string='Pending Tasks', compute='_compute_stats')
     total_hours = fields.Float(
@@ -175,11 +176,12 @@ class MemberPerformanceReport(models.TransientModel):
             report.weekly_performance = round(
                 (actual_weekly_avg / weekly_tgt * 100) if weekly_tgt else 0, 1)
 
-            # Monthly target = daily_target * (30 - off days)
+            # Monthly target = daily_target * (days_in_month - off days)
             today = fields.Date.context_today(self)
             off_days = int(self.env['ir.config_parameter'].sudo().get_param(
                 'task_project_management.monthly_off_days', '0'))
-            monthly_tgt = daily_tgt * max(30 - off_days, 0)
+            days_in_month = monthrange(today.year, today.month)[1]
+            monthly_tgt = daily_tgt * max(days_in_month - off_days, 0)
             report.monthly_target = monthly_tgt
             # Monthly hours = hours in current month
             month_start = today.replace(day=1)
@@ -276,12 +278,11 @@ class MemberPerformanceReport(models.TransientModel):
         writer.writerow(['', _('Metric'), _('Value')])
         writer.writerow(['', _('Total Tasks'), self.total_tasks])
         writer.writerow(['', _('Approved'), self.approved_tasks])
-        writer.writerow(['', _('Rejected'), self.rejected_tasks])
+        writer.writerow(['', _('Revision Requests'), self.rejected_tasks])
         writer.writerow(['', _('Pending'), self.pending_tasks])
         writer.writerow(['', _('Total Hours'), f'{self.total_hours:.2f}'])
         writer.writerow(['', _('Approved Hours'), f'{self.approved_hours:.2f}'])
         writer.writerow(['', _('Approval Rate'), f'{self.approval_rate:.1f}%'])
-        writer.writerow(['', _('Late Entries'), self.late_entries])
         writer.writerow(['', _('Avg Hours/Day'), f'{self.avg_hours_per_day:.2f}'])
         writer.writerow(['', _('Projects Worked On'), self.project_count])
         writer.writerow([])
@@ -303,12 +304,11 @@ class MemberPerformanceReport(models.TransientModel):
         writer.writerow([_('PROJECT BREAKDOWN')])
         writer.writerow([])
         writer.writerow(['', _('No.'), _('Project'), _('Tasks'), _('Total Hours'),
-                          _('Approved Hours'), _('Approval Rate'), _('Late Entries')])
+                          _('Approved Hours'), _('Approval Rate')])
         projects = tasks.mapped('project_id')
         grand_tasks = 0
         grand_hours = 0.0
         grand_approved_hrs = 0.0
-        grand_late = 0
         for pi, proj in enumerate(projects, 1):
             p_tasks = tasks.filtered(lambda t, p=proj: t.project_id == p)
             p_approved = p_tasks.filtered(
@@ -317,20 +317,17 @@ class MemberPerformanceReport(models.TransientModel):
             p_non_rejected = p_tasks.filtered(lambda t: t.approval_status != 'rejected')
             p_hrs = sum(p_non_rejected.mapped('duration_hours'))
             p_app_hrs = sum(p_approved.mapped('duration_hours'))
-            p_late = len(p_tasks.filtered(lambda t: t.is_late_entry))
             writer.writerow([
                 '', pi, proj.name, p_total,
                 f'{p_hrs:.2f}', f'{p_app_hrs:.2f}',
                 f'{round((len(p_approved) / p_total * 100) if p_total else 0, 1)}%',
-                p_late,
             ])
             grand_tasks += p_total
             grand_hours += p_hrs
             grand_approved_hrs += p_app_hrs
-            grand_late += p_late
         writer.writerow(['', '', _('TOTAL'), grand_tasks,
                           f'{grand_hours:.2f}', f'{grand_approved_hrs:.2f}',
-                          '', grand_late])
+                          ''])
         writer.writerow([])
 
         # -- Task Details --
@@ -375,6 +372,27 @@ class MemberPerformanceReport(models.TransientModel):
             'target': 'new',
         }
 
+    def _get_target_labels(self):
+        """Get translated field labels for target/performance fields."""
+        fget = self.fields_get([
+            'daily_target', 'weekly_target', 'monthly_target',
+            'daily_performance', 'weekly_performance', 'monthly_performance',
+            'total_hours', 'approved_hours', 'approval_rate',
+            'avg_hours_per_day',
+        ])
+        return {
+            'daily_target': fget['daily_target']['string'],
+            'weekly_target': fget['weekly_target']['string'],
+            'monthly_target': fget['monthly_target']['string'],
+            'daily_perf': fget['daily_performance']['string'].replace(' (%)', ''),
+            'weekly_perf': fget['weekly_performance']['string'].replace(' (%)', ''),
+            'monthly_perf': fget['monthly_performance']['string'].replace(' (%)', ''),
+            'total_hours': fget['total_hours']['string'],
+            'approved_hours': fget['approved_hours']['string'],
+            'approval_rate': fget['approval_rate']['string'].replace(' (%)', ''),
+            'avg_hours_per_day': fget['avg_hours_per_day']['string'],
+        }
+
     def action_export_png(self):
         """Export the performance report as PNG image."""
         self.ensure_one()
@@ -400,7 +418,6 @@ class MemberPerformanceReport(models.TransientModel):
             p_non_rejected = p_tasks.filtered(lambda t: t.approval_status != 'rejected')
             p_total_hrs = sum(p_non_rejected.mapped('duration_hours'))
             p_approved_hrs = sum(p_approved.mapped('duration_hours'))
-            p_late = p_tasks.filtered(lambda t: t.is_late_entry)
             rate = round(
                 (len(p_approved) / p_total * 100) if p_total else 0, 1)
             project_rows += f'''<tr>
@@ -409,7 +426,6 @@ class MemberPerformanceReport(models.TransientModel):
                 <td>{p_total_hrs:.2f}</td>
                 <td>{p_approved_hrs:.2f}</td>
                 <td>{rate}%</td>
-                <td>{len(p_late)}</td>
             </tr>'''
 
         # Build task detail rows
@@ -440,24 +456,27 @@ class MemberPerformanceReport(models.TransientModel):
 
         # Get company logo
         company = self.env.company
-        logo_html = ''
+        logo_cell = ''
         if company.logo:
             logo_b64 = company.logo.decode() if isinstance(company.logo, bytes) else company.logo
-            logo_html = f'<img src="data:image/png;base64,{logo_b64}" class="logo"/>'
+            logo_cell = f'<td class="logo-cell"><img src="data:image/png;base64,{logo_b64}" class="logo"/></td>'
 
         is_rtl = self.env.lang and self.env.lang.startswith('ar')
         dir_attr = ' dir="rtl"' if is_rtl else ''
         th_align = 'right' if is_rtl else 'left'
+        tl = self._get_target_labels()
 
         html = f'''<!DOCTYPE html>
 <html{dir_attr}><head><meta charset="utf-8"/>
 <style>
     body {{ font-family: Arial, sans-serif; margin: 20px; background: #fff; }}
-    .header {{ overflow: hidden;
-               border-bottom: 3px solid #0B3D91; padding-bottom: 15px; margin-bottom: 20px; }}
-    .logo {{ height: 60px; width: auto; float: {'right' if is_rtl else 'left'}; margin-{'left' if is_rtl else 'right'}: 15px; }}
-    .header-text h1 {{ color: #0B3D91; margin: 0; font-size: 24px; }}
-    .header-text p {{ color: #666; margin: 3px 0 0 0; font-size: 13px; }}
+    .header {{ border-bottom: 3px solid #0B3D91; padding-bottom: 15px; margin-bottom: 20px; }}
+    .header-table {{ width: 100%; border-collapse: separate; border-spacing: 15px 0; }}
+    .header-table td {{ vertical-align: middle; padding: 0; }}
+    .header-table td.logo-cell {{ width: 70px; text-align: center; white-space: nowrap; }}
+    .logo {{ height: 60px; width: auto; }}
+    .header-text h1 {{ color: #0B3D91; margin: 0; font-size: 22px; word-wrap: break-word; }}
+    .header-text p {{ color: #666; margin: 3px 0 0 0; font-size: 12px; line-height: 1.6; word-wrap: break-word; }}
     h2 {{ color: #0B3D91; margin-top: 20px; border-bottom: 2px solid #0B3D91;
           padding-bottom: 5px; font-size: 16px; }}
     .meta {{ color: #666; margin-bottom: 15px; font-size: 13px; }}
@@ -474,11 +493,13 @@ class MemberPerformanceReport(models.TransientModel):
                color: #999; font-size: 10px; text-align: center; }}
 </style></head><body>
     <div class="header">
-        {logo_html}
-        <div class="header-text">
-            <h1>{_("Member Performance Report")}</h1>
-            <p>{company.name} | {self.member_id.name} | {_("Period:")} {d_from} {_("to")} {d_to}</p>
-        </div>
+        <table class="header-table"><tr>
+            {logo_cell}
+            <td class="header-text">
+                <h1>{_("Member Performance Report")}</h1>
+                <p>{self.member_id.name}<br/>{company.name} | {_("Period:")} {d_from} {_("to")} {d_to}</p>
+            </td>
+        </tr></table>
     </div>
 
     <table class="kpi-grid">
@@ -490,42 +511,53 @@ class MemberPerformanceReport(models.TransientModel):
             <div class="kpi-label">{_("Approved")}</div></td>
         <td><div class="kpi-value" style="color:#d9534f">
             {self.rejected_tasks}</div>
-            <div class="kpi-label">{_("Rejected")}</div></td>
+            <div class="kpi-label">{_("Revision Requests")}</div></td>
         <td><div class="kpi-value" style="color:#f0ad4e">
             {self.pending_tasks}</div>
             <div class="kpi-label">{_("Pending")}</div></td>
+    </tr>
+    <tr>
         <td><div class="kpi-value">{self.total_hours:.1f}</div>
-            <div class="kpi-label">{_("Total Hours")}</div></td>
-    </tr>
-    <tr>
-        <td><div class="kpi-value">{self.approved_hours:.1f}</div>
-            <div class="kpi-label">{_("Approved Hours")}</div></td>
+            <div class="kpi-label">{tl['total_hours']}</div></td>
+        <td><div class="kpi-value" style="color:#5cb85c">{self.approved_hours:.1f}</div>
+            <div class="kpi-label">{tl['approved_hours']}</div></td>
         <td><div class="kpi-value">{self.approval_rate:.1f}%</div>
-            <div class="kpi-label">{_("Approval Rate")}</div></td>
-        <td><div class="kpi-value" style="color:#d9534f">
-            {self.late_entries}</div>
-            <div class="kpi-label">{_("Late Entries")}</div></td>
+            <div class="kpi-label">{tl['approval_rate']}</div></td>
         <td><div class="kpi-value">{self.avg_hours_per_day:.2f}</div>
-            <div class="kpi-label">{_("Avg Hours/Day")}</div></td>
-        <td><div class="kpi-value" style="color:{'#5cb85c' if self.daily_performance >= 100 else '#f0ad4e' if self.daily_performance >= 75 else '#d9534f'}">{self.daily_performance:.1f}%</div>
-            <div class="kpi-label">{_("Daily Performance")}</div></td>
+            <div class="kpi-label">{tl['avg_hours_per_day']}</div></td>
     </tr>
+    </table>
+
+    <table class="kpi-grid">
     <tr>
-        <td><div class="kpi-value" style="color:{'#5cb85c' if self.weekly_performance >= 100 else '#f0ad4e' if self.weekly_performance >= 75 else '#d9534f'}">{self.weekly_performance:.1f}%</div>
-            <div class="kpi-label">{_("Weekly Performance")}</div></td>
-        <td><div class="kpi-value">{self.monthly_target:.0f}</div>
-            <div class="kpi-label">{_("Monthly Target (hrs)")}</div></td>
-        <td><div class="kpi-value" style="color:{'#5cb85c' if self.monthly_performance >= 100 else '#f0ad4e' if self.monthly_performance >= 75 else '#d9534f'}">{self.monthly_performance:.1f}%</div>
-            <div class="kpi-label">{_("Monthly Performance")}</div></td>
-        <td></td>
-        <td></td>
+        <td>
+            <div class="kpi-value">{self.daily_target:.1f}</div>
+            <div class="kpi-label">{tl['daily_target']}</div>
+            <div style="border-top:1px solid #ccc;margin:6px 0;"></div>
+            <div class="kpi-value" style="color:{'#5cb85c' if self.daily_performance >= 75 else '#0B3D91' if self.daily_performance >= 50 else '#ffc107' if self.daily_performance >= 25 else '#d9534f'}">{self.daily_performance:.1f}%</div>
+            <div class="kpi-label">{tl['daily_perf']}</div>
+        </td>
+        <td>
+            <div class="kpi-value">{self.weekly_target:.1f}</div>
+            <div class="kpi-label">{tl['weekly_target']}</div>
+            <div style="border-top:1px solid #ccc;margin:6px 0;"></div>
+            <div class="kpi-value" style="color:{'#5cb85c' if self.weekly_performance >= 75 else '#0B3D91' if self.weekly_performance >= 50 else '#ffc107' if self.weekly_performance >= 25 else '#d9534f'}">{self.weekly_performance:.1f}%</div>
+            <div class="kpi-label">{tl['weekly_perf']}</div>
+        </td>
+        <td>
+            <div class="kpi-value">{self.monthly_target:.0f}</div>
+            <div class="kpi-label">{tl['monthly_target']}</div>
+            <div style="border-top:1px solid #ccc;margin:6px 0;"></div>
+            <div class="kpi-value" style="color:{'#5cb85c' if self.monthly_performance >= 75 else '#0B3D91' if self.monthly_performance >= 50 else '#ffc107' if self.monthly_performance >= 25 else '#d9534f'}">{self.monthly_performance:.1f}%</div>
+            <div class="kpi-label">{tl['monthly_perf']}</div>
+        </td>
     </tr>
     </table>
 
     <h2>{_("Project Breakdown")}</h2>
     <table class="data"><thead><tr>
-        <th>{_("Project")}</th><th>{_("Tasks")}</th><th>{_("Total Hours")}</th>
-        <th>{_("Approved Hours")}</th><th>{_("Approval Rate")}</th><th>{_("Late")}</th>
+        <th>{_("Project")}</th><th>{_("Tasks")}</th><th>{tl['total_hours']}</th>
+        <th>{tl['approved_hours']}</th><th>{tl['approval_rate']}</th>
     </tr></thead><tbody>{project_rows}</tbody></table>
 
     <h2>{_("Task Details")}</h2>
@@ -533,7 +565,7 @@ class MemberPerformanceReport(models.TransientModel):
         <th>{_("Date")}</th><th>{_("Project")}</th><th>{_("Description")}</th>
         <th>{_("From")}</th><th>{_("To")}</th><th>{_("Hours")}</th><th>{_("Type")}</th><th>{_("Status")}</th><th>{_("Late")}</th>
     </tr></thead><tbody>{task_rows}</tbody>
-    <tfoot><tr><td colspan="5" style="text-align:{th_align};">{_("Total Hours:")}</td><td colspan="4">{total_hours:.2f}</td></tr></tfoot>
+    <tfoot><tr><td colspan="5" style="text-align:{th_align};">{tl['total_hours']}:</td><td colspan="4">{total_hours:.2f}</td></tr></tfoot>
     </table>
     <table style="width:100%;margin-top:40px;border-top:1px solid #ddd;"><tr>
         <td style="text-align:center;color:#999;font-size:10px;padding-top:10px;">{_("Generated by")} <span dir="ltr">{company.name}</span><br/>{_("Task & Project Management System")}</td>
@@ -604,7 +636,6 @@ class MemberPerformanceReport(models.TransientModel):
             p_non_rejected = p_tasks.filtered(lambda t: t.approval_status != 'rejected')
             p_total_hrs = sum(p_non_rejected.mapped('duration_hours'))
             p_approved_hrs = sum(p_approved.mapped('duration_hours'))
-            p_late = p_tasks.filtered(lambda t: t.is_late_entry)
             rate = round(
                 (len(p_approved) / p_total * 100) if p_total else 0, 1)
             project_rows += f'''<tr>
@@ -613,7 +644,6 @@ class MemberPerformanceReport(models.TransientModel):
                 <td>{p_total_hrs:.2f}</td>
                 <td>{p_approved_hrs:.2f}</td>
                 <td>{rate}%</td>
-                <td>{len(p_late)}</td>
             </tr>'''
 
         # Build task detail rows
@@ -644,24 +674,27 @@ class MemberPerformanceReport(models.TransientModel):
 
         # Get company logo
         company = self.env.company
-        logo_html = ''
+        logo_cell = ''
         if company.logo:
             logo_b64 = company.logo.decode() if isinstance(company.logo, bytes) else company.logo
-            logo_html = f'<img src="data:image/png;base64,{logo_b64}" class="logo"/>'
+            logo_cell = f'<td class="logo-cell"><img src="data:image/png;base64,{logo_b64}" class="logo"/></td>'
 
         is_rtl = self.env.lang and self.env.lang.startswith('ar')
         dir_attr = ' dir="rtl"' if is_rtl else ''
         th_align = 'right' if is_rtl else 'left'
+        tl = self._get_target_labels()
 
         html = f'''<!DOCTYPE html>
 <html{dir_attr}><head><meta charset="utf-8"/>
 <style>
     body {{ font-family: Arial, sans-serif; margin: 20px; background: #fff; }}
-    .header {{ overflow: hidden;
-               border-bottom: 3px solid #0B3D91; padding-bottom: 15px; margin-bottom: 20px; }}
-    .logo {{ height: 60px; width: auto; float: {'right' if is_rtl else 'left'}; margin-{'left' if is_rtl else 'right'}: 15px; }}
-    .header-text h1 {{ color: #0B3D91; margin: 0; font-size: 24px; }}
-    .header-text p {{ color: #666; margin: 3px 0 0 0; font-size: 13px; }}
+    .header {{ border-bottom: 3px solid #0B3D91; padding-bottom: 15px; margin-bottom: 20px; }}
+    .header-table {{ width: 100%; border-collapse: separate; border-spacing: 15px 0; }}
+    .header-table td {{ vertical-align: middle; padding: 0; }}
+    .header-table td.logo-cell {{ width: 70px; text-align: center; white-space: nowrap; }}
+    .logo {{ height: 60px; width: auto; }}
+    .header-text h1 {{ color: #0B3D91; margin: 0; font-size: 22px; word-wrap: break-word; }}
+    .header-text p {{ color: #666; margin: 3px 0 0 0; font-size: 12px; line-height: 1.6; word-wrap: break-word; }}
     h2 {{ color: #0B3D91; margin-top: 20px; border-bottom: 2px solid #0B3D91;
           padding-bottom: 5px; font-size: 16px; }}
     .kpi-grid {{ width: 100%; border-collapse: separate; border-spacing: 8px; margin: 15px 0; }}
@@ -677,11 +710,13 @@ class MemberPerformanceReport(models.TransientModel):
                color: #999; font-size: 10px; text-align: center; }}
 </style></head><body>
     <div class="header">
-        {logo_html}
-        <div class="header-text">
-            <h1>{_("Member Performance Report")}</h1>
-            <p>{company.name} | {self.member_id.name} | {_("Period:")} {d_from} {_("to")} {d_to}</p>
-        </div>
+        <table class="header-table"><tr>
+            {logo_cell}
+            <td class="header-text">
+                <h1>{_("Member Performance Report")}</h1>
+                <p>{self.member_id.name}<br/>{company.name} | {_("Period:")} {d_from} {_("to")} {d_to}</p>
+            </td>
+        </tr></table>
     </div>
 
     <table class="kpi-grid">
@@ -693,42 +728,53 @@ class MemberPerformanceReport(models.TransientModel):
             <div class="kpi-label">{_("Approved")}</div></td>
         <td><div class="kpi-value" style="color:#d9534f">
             {self.rejected_tasks}</div>
-            <div class="kpi-label">{_("Rejected")}</div></td>
+            <div class="kpi-label">{_("Revision Requests")}</div></td>
         <td><div class="kpi-value" style="color:#f0ad4e">
             {self.pending_tasks}</div>
             <div class="kpi-label">{_("Pending")}</div></td>
+    </tr>
+    <tr>
         <td><div class="kpi-value">{self.total_hours:.1f}</div>
-            <div class="kpi-label">{_("Total Hours")}</div></td>
-    </tr>
-    <tr>
-        <td><div class="kpi-value">{self.approved_hours:.1f}</div>
-            <div class="kpi-label">{_("Approved Hours")}</div></td>
+            <div class="kpi-label">{tl['total_hours']}</div></td>
+        <td><div class="kpi-value" style="color:#5cb85c">{self.approved_hours:.1f}</div>
+            <div class="kpi-label">{tl['approved_hours']}</div></td>
         <td><div class="kpi-value">{self.approval_rate:.1f}%</div>
-            <div class="kpi-label">{_("Approval Rate")}</div></td>
-        <td><div class="kpi-value" style="color:#d9534f">
-            {self.late_entries}</div>
-            <div class="kpi-label">{_("Late Entries")}</div></td>
+            <div class="kpi-label">{tl['approval_rate']}</div></td>
         <td><div class="kpi-value">{self.avg_hours_per_day:.2f}</div>
-            <div class="kpi-label">{_("Avg Hours/Day")}</div></td>
-        <td><div class="kpi-value" style="color:{'#5cb85c' if self.daily_performance >= 100 else '#f0ad4e' if self.daily_performance >= 75 else '#d9534f'}">{self.daily_performance:.1f}%</div>
-            <div class="kpi-label">{_("Daily Performance")}</div></td>
+            <div class="kpi-label">{tl['avg_hours_per_day']}</div></td>
     </tr>
+    </table>
+
+    <table class="kpi-grid">
     <tr>
-        <td><div class="kpi-value" style="color:{'#5cb85c' if self.weekly_performance >= 100 else '#f0ad4e' if self.weekly_performance >= 75 else '#d9534f'}">{self.weekly_performance:.1f}%</div>
-            <div class="kpi-label">{_("Weekly Performance")}</div></td>
-        <td><div class="kpi-value">{self.monthly_target:.0f}</div>
-            <div class="kpi-label">{_("Monthly Target (hrs)")}</div></td>
-        <td><div class="kpi-value" style="color:{'#5cb85c' if self.monthly_performance >= 100 else '#f0ad4e' if self.monthly_performance >= 75 else '#d9534f'}">{self.monthly_performance:.1f}%</div>
-            <div class="kpi-label">{_("Monthly Performance")}</div></td>
-        <td></td>
-        <td></td>
+        <td>
+            <div class="kpi-value">{self.daily_target:.1f}</div>
+            <div class="kpi-label">{tl['daily_target']}</div>
+            <div style="border-top:1px solid #ccc;margin:6px 0;"></div>
+            <div class="kpi-value" style="color:{'#5cb85c' if self.daily_performance >= 75 else '#0B3D91' if self.daily_performance >= 50 else '#ffc107' if self.daily_performance >= 25 else '#d9534f'}">{self.daily_performance:.1f}%</div>
+            <div class="kpi-label">{tl['daily_perf']}</div>
+        </td>
+        <td>
+            <div class="kpi-value">{self.weekly_target:.1f}</div>
+            <div class="kpi-label">{tl['weekly_target']}</div>
+            <div style="border-top:1px solid #ccc;margin:6px 0;"></div>
+            <div class="kpi-value" style="color:{'#5cb85c' if self.weekly_performance >= 75 else '#0B3D91' if self.weekly_performance >= 50 else '#ffc107' if self.weekly_performance >= 25 else '#d9534f'}">{self.weekly_performance:.1f}%</div>
+            <div class="kpi-label">{tl['weekly_perf']}</div>
+        </td>
+        <td>
+            <div class="kpi-value">{self.monthly_target:.0f}</div>
+            <div class="kpi-label">{tl['monthly_target']}</div>
+            <div style="border-top:1px solid #ccc;margin:6px 0;"></div>
+            <div class="kpi-value" style="color:{'#5cb85c' if self.monthly_performance >= 75 else '#0B3D91' if self.monthly_performance >= 50 else '#ffc107' if self.monthly_performance >= 25 else '#d9534f'}">{self.monthly_performance:.1f}%</div>
+            <div class="kpi-label">{tl['monthly_perf']}</div>
+        </td>
     </tr>
     </table>
 
     <h2>{_("Project Breakdown")}</h2>
     <table class="data"><thead><tr>
-        <th>{_("Project")}</th><th>{_("Tasks")}</th><th>{_("Total Hours")}</th>
-        <th>{_("Approved Hours")}</th><th>{_("Approval Rate")}</th><th>{_("Late")}</th>
+        <th>{_("Project")}</th><th>{_("Tasks")}</th><th>{tl['total_hours']}</th>
+        <th>{tl['approved_hours']}</th><th>{tl['approval_rate']}</th>
     </tr></thead><tbody>{project_rows}</tbody></table>
 
     <h2>{_("Task Details")}</h2>
@@ -736,7 +782,7 @@ class MemberPerformanceReport(models.TransientModel):
         <th>{_("Date")}</th><th>{_("Project")}</th><th>{_("Description")}</th>
         <th>{_("From")}</th><th>{_("To")}</th><th>{_("Hours")}</th><th>{_("Type")}</th><th>{_("Status")}</th><th>{_("Late")}</th>
     </tr></thead><tbody>{task_rows}</tbody>
-    <tfoot><tr><td colspan="5" style="text-align:{th_align};">{_("Total Hours:")}</td><td colspan="4">{total_hours:.2f}</td></tr></tfoot>
+    <tfoot><tr><td colspan="5" style="text-align:{th_align};">{tl['total_hours']}:</td><td colspan="4">{total_hours:.2f}</td></tr></tfoot>
     </table>
     <table style="width:100%;margin-top:40px;border-top:1px solid #ddd;"><tr>
         <td style="text-align:center;color:#999;font-size:10px;padding-top:10px;">{_("Generated by")} <span dir="ltr">{company.name}</span><br/>{_("Task & Project Management System")}</td>
@@ -813,7 +859,7 @@ class MemberPerformanceLine(models.TransientModel):
         ('assigned', 'Assigned'),
         ('pending', 'Pending'),
         ('approved', 'Approved'),
-        ('rejected', 'Rejected'),
+        ('rejected', 'Revision Request'),
     ], string='Status')
     is_late_entry = fields.Boolean(string='Late')
 

@@ -68,15 +68,15 @@
                         </div>
                     </div>
 
-                    <!-- KPI Cards -->
+                    <!-- Row 2 — Task Summary (4 × col-md-3) -->
                     <div class="row mb-3">
-                        <div class="col-md-2 text-center">
+                        <div class="col-md-3 text-center">
                             <div class="border rounded p-2 bg-light">
                                 <small class="text-muted">Total Tasks</small>
                                 <h4><field name="total_tasks" class="d-inline"/></h4>
                             </div>
                         </div>
-                        <div class="col text-center">
+                        <div class="col-md-3 text-center">
                             <div class="border rounded p-2 bg-light">
                                 <small class="text-muted">Approved</small>
                                 <h4 class="text-success">
@@ -84,15 +84,15 @@
                                 </h4>
                             </div>
                         </div>
-                        <div class="col text-center">
+                        <div class="col-md-3 text-center">
                             <div class="border rounded p-2 bg-light">
-                                <small class="text-muted">Rejected</small>
+                                <small class="text-muted">Revision Requests</small>
                                 <h4 class="text-danger">
                                     <field name="rejected_tasks" class="d-inline"/>
                                 </h4>
                             </div>
                         </div>
-                        <div class="col text-center">
+                        <div class="col-md-3 text-center">
                             <div class="border rounded p-2 bg-light">
                                 <small class="text-muted">Pending</small>
                                 <h4 class="text-warning">
@@ -101,12 +101,22 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Row 3 — Hours & Performance (3 × col-md-4) -->
                     <div class="row mb-3">
                         <div class="col-md-4 text-center">
                             <div class="border rounded p-2 bg-light">
-                                <small class="text-muted">Late Entries</small>
-                                <h4 class="text-danger">
-                                    <field name="late_entries" class="d-inline"/>
+                                <small class="text-muted">Total Hours</small>
+                                <h4><field name="total_hours" widget="float_time"
+                                           class="d-inline"/></h4>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="border rounded p-2 bg-light">
+                                <small class="text-muted">Approved Hours</small>
+                                <h4 class="text-success">
+                                    <field name="approved_hours" widget="float_time"
+                                           class="d-inline"/>
                                 </h4>
                             </div>
                         </div>
@@ -118,20 +128,39 @@
                         </div>
                     </div>
 
+                    <!-- Row 4 — Expected vs Actual (3 × col-md-4) -->
                     <div class="row mb-3">
-                        <div class="col-md-6 text-center">
+                        <div class="col-md-4 text-center">
                             <div class="border rounded p-2 bg-light">
-                                <small class="text-muted">Total Hours Logged</small>
-                                <h4><field name="total_hours" widget="float_time"
+                                <small class="text-muted">Expected Hours</small>
+                                <h4><field name="expected_hours" class="d-inline"/></h4>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="border rounded p-2 bg-light">
+                                <small class="text-muted">Project Hours</small>
+                                <h4><field name="project_hours" widget="float_time"
                                            class="d-inline"/></h4>
                             </div>
                         </div>
-                        <div class="col-md-6 text-center">
+                        <div class="col-md-4 text-center">
                             <div class="border rounded p-2 bg-light">
-                                <small class="text-muted">Approved Hours</small>
-                                <h4 class="text-success">
-                                    <field name="approved_hours" widget="float_time"
-                                           class="d-inline"/>
+                                <small class="text-muted">Performance %</small>
+                                <h4 class="text-success"
+                                    invisible="hours_performance &lt; 75">
+                                    <field name="hours_performance" class="d-inline"/>%
+                                </h4>
+                                <h4 class="text-primary"
+                                    invisible="hours_performance &lt; 50 or hours_performance &gt;= 75">
+                                    <field name="hours_performance" class="d-inline"/>%
+                                </h4>
+                                <h4 class="text-warning"
+                                    invisible="hours_performance &lt; 25 or hours_performance &gt;= 50">
+                                    <field name="hours_performance" class="d-inline"/>%
+                                </h4>
+                                <h4 class="text-danger"
+                                    invisible="hours_performance &gt;= 25">
+                                    <field name="hours_performance" class="d-inline"/>%
                                 </h4>
                             </div>
                         </div>
@@ -154,7 +183,6 @@
                                     <field name="approval_rate"/>
                                     <field name="pending_count" sum="Total"/>
                                     <field name="rejected_count" sum="Total"/>
-                                    <field name="late_entries" sum="Total"/>
                                     <field name="avg_hours_per_day"/>
                                 </tree>
                             </field>

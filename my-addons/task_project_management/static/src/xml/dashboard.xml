@@ -54,7 +54,7 @@
                     <div class="col">
                         <div class="card kpi-card bg-danger text-white">
                             <div class="card-body text-center">
-                                <h5 class="card-title">Rejected</h5>
+                                <h5 class="card-title">Revision Requests</h5>
                                 <h2 class="kpi-value" t-esc="state.rejectedTasks"/>
                             </div>
                         </div>
@@ -316,7 +316,7 @@
                                         Approved: <strong class="text-success" t-esc="project.approved_tasks"/>
                                     </span>
                                     <span class="text-muted">
-                                        Rejected: <strong class="text-danger" t-esc="project.rejected_tasks"/>
+                                        Revision Requests: <strong class="text-danger" t-esc="project.rejected_tasks"/>
                                     </span>
                                 </div>
                             </div>
@@ -398,130 +398,207 @@
             <div class="container-fluid py-3">
 
                 <!-- Header with Logo -->
-                <div class="dashboard-header">
-                    <div class="header-left">
-                        <img class="company-logo" src="/web/binary/company_logo" alt="Logo"/>
+                <div class="dashboard-header d-flex justify-content-between align-items-center p-3 mb-4">
+                    <div class="header-left d-flex align-items-center gap-3">
+                        <img class="company-logo" src="/web/binary/company_logo" alt="Logo"
+                             style="height: 50px; width: auto;"/>
                         <div>
-                            <h2 class="dashboard-title">Manager Dashboard</h2>
-                            <p class="company-name" t-esc="state.companyName"/>
+                            <h2 class="dashboard-title text-white mb-0">Manager Dashboard</h2>
+                            <p class="text-white-50 mb-0" t-esc="state.companyName"/>
                         </div>
                     </div>
-                    <div class="header-actions">
-                        <button class="btn btn-outline-light me-2"
-                                t-on-click="onExportCSV">
+                    <div class="header-actions d-flex gap-2">
+                        <button class="btn btn-outline-light" t-on-click="onExportCSV">
                             <i class="fa fa-file-text-o"/> CSV
                         </button>
-                        <button class="btn btn-outline-light me-2"
-                                t-on-click="onExportPDF">
+                        <button class="btn btn-outline-light" t-on-click="onExportPDF">
                             <i class="fa fa-file-pdf-o"/> PDF
                         </button>
-                        <button class="btn btn-outline-light"
-                                t-on-click="onExportImage">
-                            <i class="fa fa-image"/> Image
+                        <button class="btn btn-outline-light" t-on-click="onExportImage">
+                            <i class="fa fa-image"/> PNG
                         </button>
                     </div>
                 </div>
 
-                <!-- Organization KPIs -->
+                <!-- Period Selector -->
                 <div class="row mb-4">
-                    <div class="col-md-3">
-                        <div class="card kpi-card border-primary">
-                            <div class="card-body text-center">
-                                <h6 class="text-muted">Total Projects</h6>
-                                <h2 class="text-primary" t-esc="state.totalProjects"/>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card kpi-card border-success">
-                            <div class="card-body text-center">
-                                <h6 class="text-muted">Total Members</h6>
-                                <h2 class="text-success" t-esc="state.totalMembers"/>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card kpi-card border-info">
-                            <div class="card-body text-center">
-                                <h6 class="text-muted">Total Hours</h6>
-                                <h2 class="text-info" t-esc="state.totalHours"/>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card kpi-card border-danger">
-                            <div class="card-body text-center">
-                                <h6 class="text-muted">Late Entries</h6>
-                                <h2 class="text-danger" t-esc="state.totalLateEntries"/>
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex flex-wrap align-items-center gap-3">
+                                    <span class="fw-bold text-primary">
+                                        <i class="fa fa-calendar me-1"/>
+                                        Period:
+                                    </span>
+                                    <div class="btn-group period-selector" role="group">
+                                        <button t-attf-class="btn period-pill #{state.period === 'today' ? 'active' : ''}"
+                                                t-on-click="() => this.onPeriodChange('today')">
+                                            Today
+                                        </button>
+                                        <button t-attf-class="btn period-pill #{state.period === 'week' ? 'active' : ''}"
+                                                t-on-click="() => this.onPeriodChange('week')">
+                                            This Week
+                                        </button>
+                                        <button t-attf-class="btn period-pill #{state.period === 'month' ? 'active' : ''}"
+                                                t-on-click="() => this.onPeriodChange('month')">
+                                            This Month
+                                        </button>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2 ms-auto">
+                                        <label class="mb-0 text-muted small">From:</label>
+                                        <input type="date" class="form-control form-control-sm date-input"
+                                               t-att-value="state.dateFrom"
+                                               t-on-change="onDateFromChange"/>
+                                        <label class="mb-0 text-muted small">To:</label>
+                                        <input type="date" class="form-control form-control-sm date-input"
+                                               t-att-value="state.dateTo"
+                                               t-on-change="onDateToChange"/>
+                                        <button class="btn btn-primary btn-sm apply-btn"
+                                                t-on-click="onApplyCustom">
+                                            Apply
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="mt-2 text-muted small" t-if="state.dateFrom and state.dateTo">
+                                    <i class="fa fa-info-circle me-1"/>
+                                    Showing data from
+                                    <strong t-esc="state.dateFrom"/>
+                                    to
+                                    <strong t-esc="state.dateTo"/>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- All Projects Summary -->
-                <div class="row">
-                    <div class="col-12">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5>All Projects</h5>
+                <!-- Loading Spinner -->
+                <div t-if="state.loading" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+
+                <t t-if="!state.loading">
+                    <!-- Organization KPIs -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="card kpi-card border-primary">
+                                <div class="card-body text-center">
+                                    <h6 class="text-muted">Total Projects</h6>
+                                    <h2 class="text-primary" t-esc="state.totalProjects"/>
+                                </div>
                             </div>
-                            <div class="card-body p-0">
-                                <table class="table table-striped mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th>Project</th>
-                                            <th>Status</th>
-                                            <th>Progress</th>
-                                            <th>Tasks</th>
-                                            <th>Pending</th>
-                                            <th>Approved</th>
-                                            <th>Rejected</th>
-                                            <th>Members</th>
-                                            <th>Late Entries</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <t t-if="!state.projects.length">
-                                            <tr>
-                                                <td colspan="9" class="text-center text-muted py-4">
-                                                    No projects found. Create a project to see data here.
-                                                </td>
-                                            </tr>
-                                        </t>
-                                        <t t-foreach="state.projects" t-as="project" t-key="project.id">
-                                            <tr>
-                                                <td t-esc="project.name"/>
-                                                <td>
-                                                    <span t-attf-class="badge #{project.status === 'active' ? 'text-bg-success' : project.status === 'on_hold' ? 'text-bg-warning' : project.status === 'completed' ? 'text-bg-info' : project.status === 'waiting' ? 'text-bg-danger' : 'text-bg-secondary'}"
-                                                          t-esc="project.status_display || project.status"/>
-                                                </td>
-                                                <td>
-                                                    <div class="progress" style="height: 20px; min-width: 100px;">
-                                                        <div class="progress-bar"
-                                                             t-attf-style="width: #{project.progress}%">
-                                                            <t t-esc="project.progress"/>%
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td t-esc="project.task_count"/>
-                                                <td t-esc="project.pending_tasks"/>
-                                                <td t-esc="project.approved_tasks"/>
-                                                <td t-esc="project.rejected_tasks"/>
-                                                <td t-esc="project.member_count"/>
-                                                <td>
-                                                    <span t-if="project.late_entries > 0"
-                                                          class="text-danger fw-bold"
-                                                          t-esc="project.late_entries"/>
-                                                    <span t-else="">0</span>
-                                                </td>
-                                            </tr>
-                                        </t>
-                                    </tbody>
-                                </table>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card kpi-card border-success">
+                                <div class="card-body text-center">
+                                    <h6 class="text-muted">Total Members</h6>
+                                    <h2 class="text-success" t-esc="state.totalMembers"/>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card kpi-card border-info">
+                                <div class="card-body text-center">
+                                    <h6 class="text-muted">Total Hours</h6>
+                                    <h2 class="text-info" t-esc="state.totalHours"/>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+
+                    <!-- All Projects Summary -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-header bg-white">
+                                    <h5 class="mb-0 text-primary">
+                                        <i class="fa fa-briefcase me-2"/>
+                                        All Projects
+                                    </h5>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover mb-0 performance-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Project</th>
+                                                    <th>Status</th>
+                                                    <th>Progress</th>
+                                                    <th>Tasks</th>
+                                                    <th>Pending</th>
+                                                    <th>Approved</th>
+                                                    <th>Revision Requests</th>
+                                                    <th>Members</th>
+                                                    <th>Expected Hours</th>
+                                                    <th>Project Hours</th>
+                                                    <th>Performance %</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <t t-if="!state.projects.length">
+                                                    <tr>
+                                                        <td colspan="11" class="text-center text-muted py-4">
+                                                            <i class="fa fa-inbox fa-3x mb-3 d-block"/>
+                                                            No projects found. Create a project to see data here.
+                                                        </td>
+                                                    </tr>
+                                                </t>
+                                                <t t-foreach="state.projects" t-as="project" t-key="project.id">
+                                                    <tr>
+                                                        <td t-esc="project.name"/>
+                                                        <td>
+                                                            <span t-attf-class="badge #{project.status === 'active' ? 'text-bg-success' : project.status === 'on_hold' ? 'text-bg-warning' : project.status === 'completed' ? 'text-bg-info' : project.status === 'waiting' ? 'text-bg-danger' : 'text-bg-secondary'}"
+                                                                  t-esc="project.status_display || project.status"/>
+                                                        </td>
+                                                        <td>
+                                                            <div class="progress" style="height: 20px; min-width: 100px;">
+                                                                <div class="progress-bar"
+                                                                     t-attf-style="width: #{project.progress}%">
+                                                                    <t t-esc="project.progress"/>%
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td t-esc="project.task_count"/>
+                                                        <td t-esc="project.pending_tasks"/>
+                                                        <td t-esc="project.approved_tasks"/>
+                                                        <td t-esc="project.rejected_tasks"/>
+                                                        <td t-esc="project.member_count"/>
+                                                        <td t-esc="project.expected_hours"/>
+                                                        <td t-esc="project.project_hours"/>
+                                                        <td>
+                                                            <span t-attf-class="badge #{project.performance >= 75 ? 'text-bg-success' : project.performance >= 50 ? 'text-bg-primary' : project.performance >= 25 ? 'text-bg-warning' : 'text-bg-danger'}"
+                                                                  t-esc="project.performance + '%'"/>
+                                                        </td>
+                                                    </tr>
+                                                </t>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chart Section -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-header bg-white">
+                                    <h5 class="mb-0 text-primary">
+                                        <i class="fa fa-bar-chart me-2"/>
+                                        Project Hours Comparison
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="admin-chart-container">
+                                        <canvas t-ref="adminChart"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </t>
             </div>
         </Layout>
     </t>
@@ -637,13 +714,14 @@
                                             <tr>
                                                 <th>#</th>
                                                 <th>Member Name</th>
+                                                <th>Target Hours</th>
                                                 <th>Total Hours</th>
                                                 <th>Approved Hours</th>
                                                 <th>Total Tasks</th>
                                                 <th>Approved</th>
-                                                <th>Rejected</th>
+                                                <th>Revision Requests</th>
                                                 <th>Pending</th>
-                                                <th>Delayed Entries</th>
+                                                <th>Performance %</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -655,25 +733,16 @@
                                                            t-on-click.prevent="() => this.onMemberClick(member.id)"
                                                            t-esc="member.name"/>
                                                     </td>
+                                                    <td t-esc="member.target_hours"/>
                                                     <td t-esc="member.total_hours"/>
                                                     <td t-esc="member.approved_hours"/>
+                                                    <td t-esc="member.total_tasks"/>
+                                                    <td class="text-success" t-esc="member.approved"/>
+                                                    <td class="text-danger" t-esc="member.rejected"/>
+                                                    <td class="text-warning" t-esc="member.pending"/>
                                                     <td>
-                                                        <span class="badge text-bg-primary" t-esc="member.total_tasks"/>
-                                                    </td>
-                                                    <td>
-                                                        <span class="badge text-bg-success" t-esc="member.approved"/>
-                                                    </td>
-                                                    <td>
-                                                        <span class="badge text-bg-danger" t-esc="member.rejected"/>
-                                                    </td>
-                                                    <td>
-                                                        <span class="badge text-bg-warning" t-esc="member.pending"/>
-                                                    </td>
-                                                    <td>
-                                                        <span t-if="member.delayed > 0"
-                                                              class="text-danger fw-bold"
-                                                              t-esc="member.delayed"/>
-                                                        <span t-else="">0</span>
+                                                        <span t-attf-class="fw-bold #{member.performance >= 75 ? 'text-success' : member.performance >= 50 ? 'text-primary' : member.performance >= 25 ? 'text-warning' : 'text-danger'}"
+                                                              t-esc="member.performance + '%'"/>
                                                     </td>
                                                 </tr>
                                             </t>

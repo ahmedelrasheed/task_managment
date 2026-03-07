@@ -41,15 +41,15 @@
 
                     <separator string="Performance Summary"/>
 
-                    <!-- KPI Row -->
+                    <!-- Row 1 — Task Summary (4 × col-md-3) -->
                     <div class="row mb-3">
-                        <div class="col-md-2 text-center">
+                        <div class="col-md-3 text-center">
                             <div class="border rounded p-2 bg-light">
                                 <small class="text-muted">Total Tasks</small>
                                 <h4><field name="total_tasks" class="d-inline"/></h4>
                             </div>
                         </div>
-                        <div class="col text-center">
+                        <div class="col-md-3 text-center">
                             <div class="border rounded p-2 bg-light">
                                 <small class="text-muted">Approved</small>
                                 <h4 class="text-success">
@@ -57,15 +57,15 @@
                                 </h4>
                             </div>
                         </div>
-                        <div class="col text-center">
+                        <div class="col-md-3 text-center">
                             <div class="border rounded p-2 bg-light">
-                                <small class="text-muted">Rejected</small>
+                                <small class="text-muted">Revision Requests</small>
                                 <h4 class="text-danger">
                                     <field name="rejected_tasks" class="d-inline"/>
                                 </h4>
                             </div>
                         </div>
-                        <div class="col text-center">
+                        <div class="col-md-3 text-center">
                             <div class="border rounded p-2 bg-light">
                                 <small class="text-muted">Pending</small>
                                 <h4 class="text-warning">
@@ -74,23 +74,8 @@
                             </div>
                         </div>
                     </div>
-                    <div class="row mb-3">
-                        <div class="col-md-4 text-center">
-                            <div class="border rounded p-2 bg-light">
-                                <small class="text-muted">Late Entries</small>
-                                <h4 class="text-danger">
-                                    <field name="late_entries" class="d-inline"/>
-                                </h4>
-                            </div>
-                        </div>
-                        <div class="col-md-4 text-center">
-                            <div class="border rounded p-2 bg-light">
-                                <small class="text-muted">Projects</small>
-                                <h4><field name="project_count" class="d-inline"/></h4>
-                            </div>
-                        </div>
-                    </div>
 
+                    <!-- Row 2 — Hours & Rates (4 × col-md-3) -->
                     <div class="row mb-3">
                         <div class="col-md-3 text-center">
                             <div class="border rounded p-2 bg-light">
@@ -122,11 +107,33 @@
                         </div>
                     </div>
 
+                    <!-- Row 3 — Performance vs Targets (6 × col-md-2) -->
                     <div class="row mb-3">
                         <div class="col-md-2 text-center">
                             <div class="border rounded p-2 bg-light">
                                 <small class="text-muted">Daily Target</small>
                                 <h4><field name="daily_target" class="d-inline"/></h4>
+                            </div>
+                        </div>
+                        <div class="col-md-2 text-center">
+                            <div class="border rounded p-2 bg-light">
+                                <small class="text-muted">Daily Perf.</small>
+                                <h4 class="text-success"
+                                    invisible="daily_performance &lt; 75">
+                                    <field name="daily_performance" class="d-inline"/>%
+                                </h4>
+                                <h4 class="text-primary"
+                                    invisible="daily_performance &lt; 50 or daily_performance &gt;= 75">
+                                    <field name="daily_performance" class="d-inline"/>%
+                                </h4>
+                                <h4 class="text-warning"
+                                    invisible="daily_performance &lt; 25 or daily_performance &gt;= 50">
+                                    <field name="daily_performance" class="d-inline"/>%
+                                </h4>
+                                <h4 class="text-danger"
+                                    invisible="daily_performance &gt;= 25">
+                                    <field name="daily_performance" class="d-inline"/>%
+                                </h4>
                             </div>
                         </div>
                         <div class="col-md-2 text-center">
@@ -137,26 +144,50 @@
                         </div>
                         <div class="col-md-2 text-center">
                             <div class="border rounded p-2 bg-light">
+                                <small class="text-muted">Weekly Perf.</small>
+                                <h4 class="text-success"
+                                    invisible="weekly_performance &lt; 75">
+                                    <field name="weekly_performance" class="d-inline"/>%
+                                </h4>
+                                <h4 class="text-primary"
+                                    invisible="weekly_performance &lt; 50 or weekly_performance &gt;= 75">
+                                    <field name="weekly_performance" class="d-inline"/>%
+                                </h4>
+                                <h4 class="text-warning"
+                                    invisible="weekly_performance &lt; 25 or weekly_performance &gt;= 50">
+                                    <field name="weekly_performance" class="d-inline"/>%
+                                </h4>
+                                <h4 class="text-danger"
+                                    invisible="weekly_performance &gt;= 25">
+                                    <field name="weekly_performance" class="d-inline"/>%
+                                </h4>
+                            </div>
+                        </div>
+                        <div class="col-md-2 text-center">
+                            <div class="border rounded p-2 bg-light">
                                 <small class="text-muted">Monthly Target</small>
                                 <h4><field name="monthly_target" class="d-inline"/></h4>
                             </div>
                         </div>
                         <div class="col-md-2 text-center">
                             <div class="border rounded p-2 bg-light">
-                                <small class="text-muted">Daily Perf.</small>
-                                <h4><field name="daily_performance" class="d-inline"/>%</h4>
-                            </div>
-                        </div>
-                        <div class="col-md-2 text-center">
-                            <div class="border rounded p-2 bg-light">
-                                <small class="text-muted">Weekly Perf.</small>
-                                <h4><field name="weekly_performance" class="d-inline"/>%</h4>
-                            </div>
-                        </div>
-                        <div class="col-md-2 text-center">
-                            <div class="border rounded p-2 bg-light">
                                 <small class="text-muted">Monthly Perf.</small>
-                                <h4><field name="monthly_performance" class="d-inline"/>%</h4>
+                                <h4 class="text-success"
+                                    invisible="monthly_performance &lt; 75">
+                                    <field name="monthly_performance" class="d-inline"/>%
+                                </h4>
+                                <h4 class="text-primary"
+                                    invisible="monthly_performance &lt; 50 or monthly_performance &gt;= 75">
+                                    <field name="monthly_performance" class="d-inline"/>%
+                                </h4>
+                                <h4 class="text-warning"
+                                    invisible="monthly_performance &lt; 25 or monthly_performance &gt;= 50">
+                                    <field name="monthly_performance" class="d-inline"/>%
+                                </h4>
+                                <h4 class="text-danger"
+                                    invisible="monthly_performance &gt;= 25">
+                                    <field name="monthly_performance" class="d-inline"/>%
+                                </h4>
                             </div>
                         </div>
                     </div>
@@ -172,7 +203,6 @@
                                     <field name="approved_hours" widget="float_time"
                                            sum="Total"/>
                                     <field name="approval_rate"/>
-                                    <field name="late_entries" sum="Total"/>
                                 </tree>
                             </field>
                         </page>

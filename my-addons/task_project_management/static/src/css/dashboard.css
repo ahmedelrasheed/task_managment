@@ -1027,19 +1027,13 @@ body.o_hide_apps_menu .o_navbar_apps_menu {
    11b. OVERALL PERFORMANCE DASHBOARD
    ============================================================ */
 
-/* Ensure full scroll for overall performance dashboard */
-.overall_performance_dashboard.o_action {
-    overflow: auto !important;
-    height: 100% !important;
-}
-
-.overall_performance_dashboard .o_content {
-    overflow-y: auto !important;
-    height: 100% !important;
-}
-
-.overall_performance_dashboard .o_content > div {
-    padding-bottom: 80px;
+/* Ensure bottom of dashboard content is reachable when scrolling.
+   Odoo Layout: .o_action(flex,h100%) > .o_content(flex:1,overflow:auto,h100%)
+   The .o_content is the scroll container — we just need enough padding
+   at the bottom so the last element is never hidden. */
+.overall_performance_dashboard .container-fluid,
+.admin_dashboard .container-fluid {
+    padding-bottom: 120px !important;
 }
 
 .overall_performance_dashboard .container-fluid {
@@ -1129,6 +1123,87 @@ body.o_hide_apps_menu .o_navbar_apps_menu {
 .overall_performance_dashboard .member-link:hover {
     color: #1E5BBF !important;
     text-decoration: underline;
+}
+
+/* ============================================================
+   11b. ADMIN DASHBOARD — Period Selector + Chart
+   ============================================================ */
+
+.admin_dashboard .period-selector {
+    gap: 4px;
+}
+
+.admin_dashboard .period-pill {
+    border: 2px solid #0B3D91;
+    color: #0B3D91;
+    border-radius: 20px;
+    padding: 4px 18px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    background: transparent;
+    transition: all 0.2s ease;
+    margin: 0 2px;
+}
+
+.admin_dashboard .period-pill:hover {
+    background: #E8EEF7;
+    color: #0B3D91;
+}
+
+.admin_dashboard .period-pill.active {
+    background: #0B3D91;
+    color: #fff;
+    border-color: #0B3D91;
+}
+
+.admin_dashboard .date-input {
+    border: 1px solid #0B3D91;
+    border-radius: 8px;
+    padding: 4px 10px;
+    max-width: 160px;
+    font-size: 0.85rem;
+}
+
+.admin_dashboard .date-input:focus {
+    border-color: #1E5BBF;
+    box-shadow: 0 0 0 0.2rem rgba(11, 61, 145, 0.15);
+}
+
+.admin_dashboard .apply-btn {
+    border-radius: 20px;
+    padding: 4px 20px;
+    font-weight: 600;
+}
+
+.admin_dashboard .performance-table thead th {
+    background: #0B3D91;
+    color: #fff;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    padding: 10px 12px;
+    border: none;
+}
+
+.admin_dashboard .performance-table tbody tr {
+    transition: background 0.15s ease;
+}
+
+.admin_dashboard .performance-table tbody tr:hover {
+    background: #E8EEF7 !important;
+}
+
+.admin_dashboard .performance-table tbody td {
+    padding: 10px 12px;
+    vertical-align: middle;
+    font-size: 0.88rem;
+}
+
+.admin-chart-container {
+    position: relative;
+    min-height: 400px;
+    width: 100%;
+    padding-bottom: 40px;
 }
 
 /* ============================================================
@@ -1704,6 +1779,25 @@ body.task-font-xlarge .o_list_view thead th {
 
     .overall_performance_dashboard .date-input {
         max-width: 100%;
+    }
+
+    /* Admin Dashboard: stack period controls vertically */
+    .admin_dashboard .card-body .d-flex.flex-wrap {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+
+    .admin_dashboard .ms-auto {
+        margin-left: 0 !important;
+        width: 100%;
+    }
+
+    .admin_dashboard .date-input {
+        max-width: 100%;
+    }
+
+    .admin-chart-container {
+        height: 300px;
     }
 
     /* === FORMS: Better touch targets === */

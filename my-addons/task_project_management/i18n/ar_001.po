@@ -157,7 +157,7 @@ msgstr "<small class=\"text-muted\">متوسط ساعات/يوم</small>"
 #. module: task_project_management
 #: model_terms:ir.ui.view,arch_db:task_project_management.view_member_performance_report_form
 msgid "<small class=\"text-muted\">Daily Perf.</small>"
-msgstr ""
+msgstr "<small class=\"text-muted\">الأداء اليومي</small>"
 
 #. module: task_project_management
 #: model_terms:ir.ui.view,arch_db:task_project_management.view_member_performance_report_form
@@ -178,7 +178,7 @@ msgstr "<small class=\"text-muted\">الأعضاء</small>"
 #. module: task_project_management
 #: model_terms:ir.ui.view,arch_db:task_project_management.view_member_performance_report_form
 msgid "<small class=\"text-muted\">Monthly Perf.</small>"
-msgstr ""
+msgstr "<small class=\"text-muted\">الأداء الشهري</small>"
 
 #. module: task_project_management
 #: model_terms:ir.ui.view,arch_db:task_project_management.view_member_performance_report_form
@@ -209,8 +209,8 @@ msgstr "<small class=\"text-muted\">المشروعات</small>"
 #. module: task_project_management
 #: model_terms:ir.ui.view,arch_db:task_project_management.view_member_performance_report_form
 #: model_terms:ir.ui.view,arch_db:task_project_management.view_project_performance_report_form
-msgid "<small class=\"text-muted\">Rejected</small>"
-msgstr "<small class=\"text-muted\">مرفوضة</small>"
+msgid "<small class=\"text-muted\">Revision Requests</small>"
+msgstr "<small class=\"text-muted\">طلبات المراجعة</small>"
 
 #. module: task_project_management
 #: model_terms:ir.ui.view,arch_db:task_project_management.view_project_performance_report_form
@@ -219,11 +219,27 @@ msgstr "<small class=\"text-muted\">الحالة</small>"
 
 #. module: task_project_management
 #: model_terms:ir.ui.view,arch_db:task_project_management.view_project_performance_report_form
+msgid "<small class=\"text-muted\">Expected Hours</small>"
+msgstr "<small class=\"text-muted\">الساعات المتوقعة</small>"
+
+#. module: task_project_management
+#: model_terms:ir.ui.view,arch_db:task_project_management.view_project_performance_report_form
+msgid "<small class=\"text-muted\">Performance %</small>"
+msgstr "<small class=\"text-muted\">نسبة الأداء %</small>"
+
+#. module: task_project_management
+#: model_terms:ir.ui.view,arch_db:task_project_management.view_project_performance_report_form
+msgid "<small class=\"text-muted\">Project Hours</small>"
+msgstr "<small class=\"text-muted\">ساعات المشروع</small>"
+
+#. module: task_project_management
+#: model_terms:ir.ui.view,arch_db:task_project_management.view_project_performance_report_form
 msgid "<small class=\"text-muted\">Total Hours Logged</small>"
-msgstr ""
+msgstr "<small class=\"text-muted\">إجمالي الساعات المسجلة</small>"
 
 #. module: task_project_management
 #: model_terms:ir.ui.view,arch_db:task_project_management.view_member_performance_report_form
+#: model_terms:ir.ui.view,arch_db:task_project_management.view_project_performance_report_form
 msgid "<small class=\"text-muted\">Total Hours</small>"
 msgstr "<small class=\"text-muted\">إجمالي الساعات</small>"
 
@@ -236,7 +252,7 @@ msgstr "<small class=\"text-muted\">إجمالي المهام</small>"
 #. module: task_project_management
 #: model_terms:ir.ui.view,arch_db:task_project_management.view_member_performance_report_form
 msgid "<small class=\"text-muted\">Weekly Perf.</small>"
-msgstr ""
+msgstr "<small class=\"text-muted\">الأداء الأسبوعي</small>"
 
 #. module: task_project_management
 #: model_terms:ir.ui.view,arch_db:task_project_management.view_member_performance_report_form
@@ -912,7 +928,10 @@ msgid "Daily Performance (%)"
 msgstr "الأداء اليومي (%)"
 
 #. module: task_project_management
+#. odoo-python
+#: code:addons/task_project_management/wizard/member_performance_report.py:0
 #: model:ir.model.fields,field_description:task_project_management.field_task_management_member_performance_report__daily_target
+#, python-format
 msgid "Daily Target"
 msgstr "الهدف اليومي"
 
@@ -1803,7 +1822,10 @@ msgid "Monthly Performance (%)"
 msgstr "الأداء الشهري (%)"
 
 #. module: task_project_management
+#. odoo-python
+#: code:addons/task_project_management/wizard/member_performance_report.py:0
 #: model:ir.model.fields,field_description:task_project_management.field_task_management_member_performance_report__monthly_target
+#, python-format
 msgid "Monthly Target"
 msgstr "الهدف الشهري"
 
@@ -2517,24 +2539,10 @@ msgstr "ملفات مرجعية"
 
 #. module: task_project_management
 #: model_terms:ir.ui.view,arch_db:task_project_management.view_task_form
-msgid "Reject"
-msgstr "رفض"
+msgid "Request Revision"
+msgstr "طلب مراجعة"
 
 #. module: task_project_management
-#. odoo-python
-#. odoo-javascript
-#: code:addons/task_project_management/models/task.py:0
-#: code:addons/task_project_management/models/task.py:0
-#: code:addons/task_project_management/models/task.py:0
-#: code:addons/task_project_management/models/task.py:0
-#: code:addons/task_project_management/wizard/export_report_wizard.py:0
-#: code:addons/task_project_management/wizard/member_performance_report.py:0
-#: code:addons/task_project_management/wizard/member_performance_report.py:0
-#: code:addons/task_project_management/wizard/member_performance_report.py:0
-#: code:addons/task_project_management/wizard/project_performance_report.py:0
-#: code:addons/task_project_management/wizard/project_performance_report.py:0
-#: code:addons/task_project_management/wizard/project_performance_report.py:0
-#: code:addons/task_project_management/wizard/project_performance_report.py:0
 #: model:ir.model.fields,field_description:task_project_management.field_task_management_project_performance_member__rejected_count
 #: model:ir.model.fields.selection,name:task_project_management.selection__task_management_member_performance_line__approval_status__rejected
 #: model:ir.model.fields.selection,name:task_project_management.selection__task_management_project_performance_task__approval_status__rejected
@@ -2543,17 +2551,31 @@ msgstr "رفض"
 #: model:ir.model.fields.selection,name:task_project_management.selection__task_management_task_audit__old_status__rejected
 #: model_terms:ir.ui.view,arch_db:task_project_management.view_task_audit_search
 #: model_terms:ir.ui.view,arch_db:task_project_management.view_task_search
-#: code:addons/task_project_management/static/src/xml/dashboard.xml:0
-#, python-format
-msgid "Rejected"
-msgstr "مرفوضة"
+msgid "Revision Request"
+msgstr "طلب مراجعة"
 
 #. module: task_project_management
+#. odoo-python
+#. odoo-javascript
+#: code:addons/task_project_management/models/task.py:0
+#: code:addons/task_project_management/models/task.py:0
+#: code:addons/task_project_management/models/task.py:0
+#: code:addons/task_project_management/models/task.py:0
+#: code:addons/task_project_management/static/src/xml/dashboard.xml:0
+#: code:addons/task_project_management/wizard/export_report_wizard.py:0
+#: code:addons/task_project_management/wizard/member_performance_report.py:0
+#: code:addons/task_project_management/wizard/member_performance_report.py:0
+#: code:addons/task_project_management/wizard/member_performance_report.py:0
+#: code:addons/task_project_management/wizard/project_performance_report.py:0
+#: code:addons/task_project_management/wizard/project_performance_report.py:0
+#: code:addons/task_project_management/wizard/project_performance_report.py:0
+#: code:addons/task_project_management/wizard/project_performance_report.py:0
 #: model:ir.model.fields,field_description:task_project_management.field_task_management_member_performance_report__rejected_tasks
 #: model:ir.model.fields,field_description:task_project_management.field_task_management_project__rejected_task_count
 #: model:ir.model.fields,field_description:task_project_management.field_task_management_project_performance_report__rejected_tasks
-msgid "Rejected Tasks"
-msgstr "المهام المرفوضة"
+#, python-format
+msgid "Revision Requests"
+msgstr "طلبات المراجعة"
 
 #. module: task_project_management
 #: model:ir.model.fields,field_description:task_project_management.field_task_management_member__user_id
@@ -2841,6 +2863,7 @@ msgstr "عدد المهام"
 
 #. module: task_project_management
 #: model:ir.model.fields,field_description:task_project_management.field_task_management_task__description
+#: model:ir.model.fields,field_description:task_project_management.field_task_management_task__description_short
 msgid "Task Description"
 msgstr "وصف المهمة"
 
@@ -3327,7 +3350,10 @@ msgid "Weekly Performance (%)"
 msgstr "الأداء الأسبوعي (%)"
 
 #. module: task_project_management
+#. odoo-python
+#: code:addons/task_project_management/wizard/member_performance_report.py:0
 #: model:ir.model.fields,field_description:task_project_management.field_task_management_member_performance_report__weekly_target
+#, python-format
 msgid "Weekly Target"
 msgstr "الهدف الأسبوعي"
 
@@ -3591,8 +3617,8 @@ msgstr "معتمدة:"
 #. module: task_project_management
 #. odoo-javascript
 #: code:addons/task_project_management/static/src/xml/dashboard.xml:0
-msgid "Rejected:"
-msgstr "مرفوضة:"
+msgid "Revision Requests:"
+msgstr "طلبات المراجعة:"
 
 #. module: task_project_management
 #. odoo-javascript
@@ -4046,6 +4072,12 @@ msgstr "اسم العضو"
 #. module: task_project_management
 #. odoo-python
 #: code:addons/task_project_management/models/task.py:0
+msgid "Target Hours"
+msgstr "الساعات المستهدفة"
+
+#. module: task_project_management
+#. odoo-python
+#: code:addons/task_project_management/models/task.py:0
 msgid "Total Hours"
 msgstr "إجمالي الساعات"
 
@@ -4070,6 +4102,12 @@ msgstr "الإدخالات المتأخرة"
 #. module: task_project_management
 #. odoo-javascript
 #: code:addons/task_project_management/static/src/xml/dashboard.xml:0
+msgid "Target Hours"
+msgstr "الساعات المستهدفة"
+
+#. module: task_project_management
+#. odoo-javascript
+#: code:addons/task_project_management/static/src/xml/dashboard.xml:0
 msgid "Total Hours"
 msgstr "إجمالي الساعات"
 
@@ -4084,12 +4122,6 @@ msgstr "إجمالي المهام"
 #: code:addons/task_project_management/static/src/xml/dashboard.xml:0
 msgid "Approved"
 msgstr "معتمدة"
-
-#. module: task_project_management
-#. odoo-javascript
-#: code:addons/task_project_management/static/src/xml/dashboard.xml:0
-msgid "Rejected"
-msgstr "مرفوضة"
 
 #. module: task_project_management
 #. odoo-javascript
@@ -4114,3 +4146,63 @@ msgstr "هذا الأسبوع"
 #: code:addons/task_project_management/static/src/xml/dashboard.xml:0
 msgid "This Month"
 msgstr "هذا الشهر"
+
+#. module: task_project_management
+#. odoo-python
+#. odoo-javascript
+#: code:addons/task_project_management/models/task.py:0
+#: code:addons/task_project_management/static/src/xml/dashboard.xml:0
+#, python-format
+msgid "Expected Hours"
+msgstr "الساعات المتوقعة"
+
+#. module: task_project_management
+#. odoo-python
+#. odoo-javascript
+#: code:addons/task_project_management/models/task.py:0
+#: code:addons/task_project_management/static/src/xml/dashboard.xml:0
+#, python-format
+msgid "Project Hours"
+msgstr "ساعات المشروع"
+
+#. module: task_project_management
+#. odoo-python
+#. odoo-javascript
+#: code:addons/task_project_management/models/task.py:0
+#: code:addons/task_project_management/static/src/xml/dashboard.xml:0
+#, python-format
+msgid "Performance %"
+msgstr "نسبة الأداء %"
+
+#. module: task_project_management
+#. odoo-python
+#. odoo-javascript
+#: code:addons/task_project_management/models/task.py:0
+#: code:addons/task_project_management/static/src/xml/dashboard.xml:0
+#, python-format
+msgid "Project Hours Comparison"
+msgstr "مقارنة ساعات المشروعات"
+
+#. module: task_project_management
+#. odoo-python
+#: code:addons/task_project_management/wizard/project_performance_report.py:0
+#, python-format
+msgid "Hours Performance"
+msgstr "أداء الساعات"
+
+#. module: task_project_management
+#: model:ir.model.fields,field_description:task_project_management.field_task_management_project_performance_report__hours_performance
+msgid "Hours Performance (%)"
+msgstr "أداء الساعات (%)"
+
+#. module: task_project_management
+#. odoo-python
+#: code:addons/task_project_management/wizard/project_performance_report.py:0
+#, python-format
+msgid "Performance"
+msgstr "الأداء"
+
+#. module: task_project_management
+#: model:ir.model.fields,field_description:task_project_management.field_task_management_project__expected_hours
+msgid "Expected Hours"
+msgstr "الساعات المتوقعة"

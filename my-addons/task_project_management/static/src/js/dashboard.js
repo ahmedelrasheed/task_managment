@@ -2,9 +2,10 @@
 
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
-import { Component, useState, onWillStart } from "@odoo/owl";
+import { Component, useState, onWillStart, useRef, onMounted, onWillUnmount } from "@odoo/owl";
 import { Layout } from "@web/search/layout";
 import { _t } from "@web/core/l10n/translation";
+import { loadBundle } from "@web/core/assets";
 
 // ============================================================
 // Member Dashboard
@@ -142,36 +143,156 @@ export class AdminDashboard extends Component {
         this.orm = useService("orm");
         this.action = useService("action");
         this.display = { controlPanel: {} };
+        this.chartRef = useRef("adminChart");
+        this.chart = null;
         this.state = useState({
             companyName: "",
             totalProjects: 0,
             totalMembers: 0,
             totalHours: "0.00",
-            totalLateEntries: 0,
             projects: [],
+            period: "month",
+            dateFrom: "",
+            dateTo: "",
+            loading: false,
         });
         onWillStart(async () => {
+            await loadBundle("web.chartjs_lib");
             await this.loadData();
+        });
+        onMounted(() => {
+            this.renderChart();
+        });
+        onWillUnmount(() => {
+            if (this.chart) {
+                this.chart.destroy();
+                this.chart = null;
+            }
         });
     }
 
     async loadData() {
+        this.state.loading = true;
         try {
             const [result, companies] = await Promise.all([
-                this.orm.call("task.management.task", "get_admin_dashboard_data", []),
+                this.orm.call("task.management.task", "get_admin_dashboard_data", [
+                    this.state.period, this.state.dateFrom || false, this.state.dateTo || false,
+                ]),
                 this.orm.call("res.company", "search_read", [[["id", "=", 1]], ["name"]], { limit: 1 }),
             ]);
             Object.assign(this.state, result);
+            this.state.dateFrom = result.date_from || "";
+            this.state.dateTo = result.date_to || "";
             if (companies && companies.length) {
                 this.state.companyName = companies[0].name;
             }
         } catch (e) {
             console.error("Failed to load admin dashboard data:", e);
         }
+        this.state.loading = false;
+        setTimeout(() => this.renderChart(), 0);
+    }
+
+    renderChart() {
+        if (!this.chartRef.el) return;
+        if (this.chart) {
+            this.chart.destroy();
+            this.chart = null;
+        }
+        const projects = this.state.projects || [];
+        if (!projects.length) return;
+
+        const labels = projects.map(p => p.name);
+        const expected = projects.map(p => parseFloat(p.expected_hours) || 0);
+        const actual = projects.map(p => parseFloat(p.project_hours) || 0);
+
+        this.chart = new Chart(this.chartRef.el, {
+            type: "bar",
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label: _t("Expected Hours"),
+                        data: expected,
+                        backgroundColor: "#0B3D91",
+                        borderRadius: 4,
+                        barPercentage: 0.7,
+                        categoryPercentage: 0.6,
+                    },
+                    {
+                        label: _t("Project Hours"),
+                        data: actual,
+                        backgroundColor: "#1E5BBF",
+                        borderRadius: 4,
+                        barPercentage: 0.7,
+                        categoryPercentage: 0.6,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: "top" },
+                    title: {
+                        display: true,
+                        text: _t("Project Hours Comparison"),
+                        font: { size: 16, weight: "bold" },
+                        color: "#0B3D91",
+                    },
+                },
+                layout: {
+                    padding: { bottom: 20 },
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 0,
+                            autoSkip: false,
+                        },
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: _t("Hours") },
+                    },
+                },
+            },
+        });
+    }
+
+    async onPeriodChange(period) {
+        this.state.period = period;
+        if (period !== "custom") {
+            this.state.dateFrom = "";
+            this.state.dateTo = "";
+            await this.loadData();
+        }
+    }
+
+    onDateFromChange(ev) {
+        this.state.dateFrom = ev.target.value;
+    }
+
+    onDateToChange(ev) {
+        this.state.dateTo = ev.target.value;
+    }
+
+    async onApplyCustom() {
+        if (this.state.dateFrom && this.state.dateTo) {
+            this.state.period = "custom";
+            await this.loadData();
+        }
+    }
+
+    _periodArgs() {
+        return [
+            this.state.period, this.state.dateFrom || false, this.state.dateTo || false,
+        ];
     }
 
     async onExportCSV() {
-        const result = await this.orm.call("task.management.task", "export_admin_dashboard_csv", []);
+        const result = await this.orm.call("task.management.task", "export_admin_dashboard_csv", this._periodArgs());
         const link = document.createElement("a");
         link.href = "data:text/csv;base64," + result.file_content;
         link.download = result.filename;
@@ -179,7 +300,7 @@ export class AdminDashboard extends Component {
     }
 
     async onExportImage() {
-        const result = await this.orm.call("task.management.task", "export_admin_dashboard_png", []);
+        const result = await this.orm.call("task.management.task", "export_admin_dashboard_png", this._periodArgs());
         const link = document.createElement("a");
         link.href = "data:image/png;base64," + result.file_content;
         link.download = result.filename;
@@ -187,7 +308,7 @@ export class AdminDashboard extends Component {
     }
 
     async onExportPDF() {
-        const result = await this.orm.call("task.management.task", "export_admin_dashboard_pdf", []);
+        const result = await this.orm.call("task.management.task", "export_admin_dashboard_pdf", this._periodArgs());
         const link = document.createElement("a");
         link.href = "data:application/pdf;base64," + result.file_content;
         link.download = result.filename;

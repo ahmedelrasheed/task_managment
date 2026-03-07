@@ -99,7 +99,7 @@
                 <separator/>
                 <filter string="Approved" name="filter_approved"
                         domain="[('new_status', '=', 'approved')]"/>
-                <filter string="Rejected" name="filter_rejected"
+                <filter string="Revision Request" name="filter_rejected"
                         domain="[('new_status', '=', 'rejected')]"/>
                 <separator/>
                 <group expand="0" string="Group By">

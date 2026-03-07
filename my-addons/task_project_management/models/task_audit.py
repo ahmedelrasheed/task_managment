@@ -14,13 +14,13 @@ class TaskManagementTaskAudit(models.Model):
         ('assigned', 'Assigned'),
         ('pending', 'Pending'),
         ('approved', 'Approved'),
-        ('rejected', 'Rejected'),
+        ('rejected', 'Revision Request'),
     ], string='Previous Status')
     new_status = fields.Selection([
         ('assigned', 'Assigned'),
         ('pending', 'Pending'),
         ('approved', 'Approved'),
-        ('rejected', 'Rejected'),
+        ('rejected', 'Revision Request'),
     ], string='New Status', required=True)
     changed_by = fields.Many2one(
         'res.users', string='Changed By',
@@ -47,7 +47,7 @@ class TaskManagementTaskAudit(models.Model):
         ('assigned', 'Assigned'),
         ('pending', 'Pending'),
         ('approved', 'Approved'),
-        ('rejected', 'Rejected'),
+        ('rejected', 'Revision Request'),
     ], string='Status at Snapshot')
     snap_task_type = fields.Selection([
         ('initiated', 'Initiated'),

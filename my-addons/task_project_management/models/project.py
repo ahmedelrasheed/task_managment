@@ -85,7 +85,7 @@ class TaskManagementProject(models.Model):
         compute='_compute_task_stats',
     )
     rejected_task_count = fields.Integer(
-        string='Rejected Tasks',
+        string='Revision Requests',
         compute='_compute_task_stats',
     )
     assigned_task_count = fields.Integer(

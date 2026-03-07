@@ -175,7 +175,7 @@ msgstr ""
 #. module: task_project_management
 #: model_terms:ir.ui.view,arch_db:task_project_management.view_member_performance_report_form
 #: model_terms:ir.ui.view,arch_db:task_project_management.view_project_performance_report_form
-msgid "<small class=\"text-muted\">Rejected</small>"
+msgid "<small class=\"text-muted\">Revision Requests</small>"
 msgstr ""
 
 #. module: task_project_management
@@ -1995,6 +1995,15 @@ msgstr ""
 #. odoo-python
 #: code:addons/task_project_management/models/task.py:0
 #: code:addons/task_project_management/static/src/xml/dashboard.xml:0
+#, python-format
+msgid "Target Hours"
+msgstr ""
+
+#. module: task_project_management
+#. odoo-javascript
+#. odoo-python
+#: code:addons/task_project_management/models/task.py:0
+#: code:addons/task_project_management/static/src/xml/dashboard.xml:0
 #: code:addons/task_project_management/wizard/member_performance_report.py:0
 #: model:ir.ui.menu,name:task_project_management.menu_member_performance
 #, python-format
@@ -3086,7 +3095,7 @@ msgstr ""
 
 #. module: task_project_management
 #: model_terms:ir.ui.view,arch_db:task_project_management.view_task_form
-msgid "Reject"
+msgid "Request Revision"
 msgstr ""
 
 #. module: task_project_management
@@ -3119,21 +3128,26 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:task_project_management.view_task_audit_search
 #: model_terms:ir.ui.view,arch_db:task_project_management.view_task_search
 #, python-format
-msgid "Rejected"
+msgid "Revision Request"
 msgstr ""
 
 #. module: task_project_management
+#. odoo-python
+#. odoo-javascript
+#: code:addons/task_project_management/models/task.py:0
+#: code:addons/task_project_management/static/src/xml/dashboard.xml:0
 #: model:ir.model.fields,field_description:task_project_management.field_task_management_member_performance_report__rejected_tasks
 #: model:ir.model.fields,field_description:task_project_management.field_task_management_project__rejected_task_count
 #: model:ir.model.fields,field_description:task_project_management.field_task_management_project_performance_report__rejected_tasks
-msgid "Rejected Tasks"
+#, python-format
+msgid "Revision Requests"
 msgstr ""
 
 #. module: task_project_management
 #. odoo-javascript
 #: code:addons/task_project_management/static/src/xml/dashboard.xml:0
 #, python-format
-msgid "Rejected:"
+msgid "Revision Requests:"
 msgstr ""
 
 #. module: task_project_management
@@ -4265,4 +4279,40 @@ msgstr ""
 #: code:addons/task_project_management/wizard/project_performance_report.py:0
 #, python-format
 msgid "wkhtmltopdf is not installed. Please install wkhtmltopdf package."
+msgstr ""
+
+#. module: task_project_management
+#. odoo-python
+#. odoo-javascript
+#: code:addons/task_project_management/models/task.py:0
+#: code:addons/task_project_management/static/src/xml/dashboard.xml:0
+#, python-format
+msgid "Expected Hours"
+msgstr ""
+
+#. module: task_project_management
+#. odoo-python
+#. odoo-javascript
+#: code:addons/task_project_management/models/task.py:0
+#: code:addons/task_project_management/static/src/xml/dashboard.xml:0
+#, python-format
+msgid "Project Hours"
+msgstr ""
+
+#. module: task_project_management
+#. odoo-python
+#. odoo-javascript
+#: code:addons/task_project_management/models/task.py:0
+#: code:addons/task_project_management/static/src/xml/dashboard.xml:0
+#, python-format
+msgid "Performance %"
+msgstr ""
+
+#. module: task_project_management
+#. odoo-python
+#. odoo-javascript
+#: code:addons/task_project_management/models/task.py:0
+#: code:addons/task_project_management/static/src/xml/dashboard.xml:0
+#, python-format
+msgid "Project Hours Comparison"
 msgstr ""

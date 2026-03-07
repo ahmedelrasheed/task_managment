@@ -79,7 +79,7 @@ class ExportReportWizard(models.TransientModel):
                           f'{sum(approved.mapped("duration_hours")):.2f}'])
         writer.writerow(['', _('Pending'), len(pending),
                           f'{sum(pending.mapped("duration_hours")):.2f}'])
-        writer.writerow(['', _('Rejected'), len(rejected),
+        writer.writerow(['', _('Revision Requests'), len(rejected),
                           f'{sum(rejected.mapped("duration_hours")):.2f}'])
         if assigned:
             writer.writerow(['', _('Assigned'), len(assigned),

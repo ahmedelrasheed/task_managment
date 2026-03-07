@@ -21,7 +21,7 @@
                     <button name="action_approve" string="Approve"
                             type="object" class="btn-primary"
                             invisible="approval_status != 'pending' or not is_current_user_project_pm or is_current_user_member"/>
-                    <button name="action_reject" string="Reject"
+                    <button name="action_reject" string="Request Revision"
                             type="object" class="btn-danger"
                             invisible="approval_status != 'pending' or not is_current_user_project_pm or is_current_user_member"/>
                     <!-- Statusbar for regular tasks -->
@@ -238,7 +238,8 @@
                 <field name="phase_id" optional="hide"/>
                 <field name="member_id" optional="hide"/>
                 <field name="assignment_name" string="Task Name" optional="show"/>
-                <field name="description"/>
+                <field name="description" column_invisible="1"/>
+                <field name="description_short"/>
                 <field name="duration_hours" widget="float_time" sum="Total Hours"/>
                 <field name="due_date" optional="show"/>
                 <field name="task_type" widget="badge"
@@ -271,7 +272,7 @@
                         domain="[('approval_status', '=', 'pending')]"/>
                 <filter string="Approved" name="filter_approved"
                         domain="[('approval_status', '=', 'approved')]"/>
-                <filter string="Rejected" name="filter_rejected"
+                <filter string="Revision Request" name="filter_rejected"
                         domain="[('approval_status', '=', 'rejected')]"/>
                 <separator/>
                 <filter string="Today" name="filter_today"
@@ -326,7 +327,8 @@
                 <field name="phase_id" optional="hide"/>
                 <field name="member_id"/>
                 <field name="assignment_name" string="Task Name" optional="show"/>
-                <field name="description"/>
+                <field name="description" column_invisible="1"/>
+                <field name="description_short"/>
                 <field name="duration_hours" widget="float_time" sum="Total Hours"/>
                 <field name="due_date" optional="show"/>
                 <field name="task_type" widget="badge"

@@ -7,6 +7,7 @@ import tempfile
 from odoo import models, fields, api, _
 from odoo.exceptions import ValidationError, UserError
 from markupsafe import Markup
+from calendar import monthrange
 from datetime import timedelta, date
 
 
@@ -21,6 +22,10 @@ class TaskManagementTask(models.Model):
         default=fields.Date.context_today, tracking=True,
     )
     description = fields.Text(string='Task Description')
+    description_short = fields.Char(
+        string='Task Description',
+        compute='_compute_description_short',
+    )
     project_id = fields.Many2one(
         'task.management.project', string='Project',
         required=True, ondelete='restrict',
@@ -49,7 +54,7 @@ class TaskManagementTask(models.Model):
         ('assigned', 'Assigned'),
         ('pending', 'Pending'),
         ('approved', 'Approved'),
-        ('rejected', 'Rejected'),
+        ('rejected', 'Revision Request'),
     ], string='Approval Status', default='pending', required=True, tracking=True)
     task_type = fields.Selection([
         ('initiated', 'Initiated'),
@@ -243,6 +248,16 @@ class TaskManagementTask(models.Model):
                 task.duration_hours = (24.0 - task.time_from) + task.time_to
             else:
                 task.duration_hours = task.time_to - task.time_from
+
+    @api.depends('description')
+    def _compute_description_short(self):
+        for task in self:
+            desc = (task.description or '').strip()
+            words = desc.split()
+            if len(words) <= 6:
+                task.description_short = desc
+            else:
+                task.description_short = ' '.join(words[:6]) + ' ...'
 
     @api.depends('date', 'entry_timestamp')
     def _compute_is_late_entry(self):
@@ -834,7 +849,7 @@ class TaskManagementTask(models.Model):
             if member_partner:
                 status_labels = {
                     'approved': 'Approved',
-                    'rejected': 'Rejected',
+                    'rejected': 'Revision Request',
                     'pending': 'Pending',
                 }
                 status_text = status_labels.get(new_status, new_status)
@@ -919,10 +934,11 @@ class TaskManagementTask(models.Model):
         weekly_perf = round(
             (hours_week / weekly_target * 100) if weekly_target else 0, 1)
 
-        # Monthly target = daily_target * (30 - off days)
+        # Monthly target = daily_target * (days_in_month - off days)
         off_days = int(self.env['ir.config_parameter'].sudo().get_param(
             'task_project_management.monthly_off_days', '0'))
-        monthly_target = daily_target * max(30 - off_days, 0)
+        days_in_month = monthrange(today.year, today.month)[1]
+        monthly_target = daily_target * max(days_in_month - off_days, 0)
         monthly_perf = round(
             (hours_month / monthly_target * 100) if monthly_target else 0, 1)
 
@@ -1014,22 +1030,83 @@ class TaskManagementTask(models.Model):
             })
         return {'projects': result}
 
+    @staticmethod
+    def _count_business_days(d_from, d_to):
+        """Count Mon-Fri business days between two dates, inclusive."""
+        if d_from > d_to:
+            return 0
+        count = 0
+        current = d_from
+        while current <= d_to:
+            if current.weekday() < 5:  # Mon=0 .. Fri=4
+                count += 1
+            current += timedelta(days=1)
+        return count
+
     @api.model
-    def get_admin_dashboard_data(self):
-        """Return organization-wide dashboard data for Admin."""
+    def get_admin_dashboard_data(self, period='month', date_from=False, date_to=False):
+        """Return organization-wide dashboard data for Admin with performance metrics."""
         Project = self.env['task.management.project'].sudo()
         Member = self.env['task.management.member'].sudo()
+        today = fields.Date.context_today(self)
+
+        # --- Determine date range ---
+        if period == 'today':
+            d_from = d_to = today
+        elif period == 'week':
+            week_start = today - timedelta(days=(today.weekday() + 1) % 7)
+            d_from = week_start
+            d_to = week_start + timedelta(days=6)
+        elif period == 'custom' and date_from and date_to:
+            d_from = fields.Date.from_string(date_from)
+            d_to = fields.Date.from_string(date_to)
+        else:  # month (default)
+            d_from = today.replace(day=1)
+            if today.month == 12:
+                d_to = today.replace(day=31)
+            else:
+                d_to = today.replace(month=today.month + 1, day=1) - timedelta(days=1)
+
+        # --- Config targets ---
+        ICP = self.env['ir.config_parameter'].sudo()
+        daily_target = float(ICP.get_param(
+            'task_project_management.daily_hours_average', '8.0'))
+        weekly_target = float(ICP.get_param(
+            'task_project_management.weekly_hours_average', '40.0'))
+
+        biz_days = self._count_business_days(d_from, d_to)
 
         projects = Project.search([])
-        all_tasks = self.sudo().search([])
+        all_tasks = self.sudo().search([
+            ('date', '>=', d_from),
+            ('date', '<=', d_to),
+        ])
         status_map = dict(
             Project.fields_get(['status'])['status']['selection'])
 
         projects_data = []
-        total_late = 0
         for proj in projects:
-            late = len(proj.task_ids.filtered(lambda t: t.is_late_entry))
-            total_late += late
+            members = len(proj.member_ids)
+
+            # Calculate expected hours based on period
+            # Note: biz_days already excludes weekends (Mon-Fri only),
+            # and monthly_off_days includes weekends, so don't subtract again.
+            if period == 'today':
+                expected_hours = daily_target * members
+            elif period == 'week':
+                expected_hours = weekly_target * members
+            else:  # month or custom
+                expected_hours = daily_target * biz_days * members
+
+            # Actual project hours (non-rejected tasks in period)
+            proj_tasks = all_tasks.filtered(
+                lambda t, pid=proj.id: t.project_id.id == pid
+                and t.approval_status != 'rejected')
+            project_hours = sum(proj_tasks.mapped('duration_hours'))
+
+            performance = round(
+                (project_hours / expected_hours * 100) if expected_hours else 0, 1)
+
             projects_data.append({
                 'id': proj.id,
                 'name': proj.name,
@@ -1040,16 +1117,25 @@ class TaskManagementTask(models.Model):
                 'pending_tasks': proj.pending_task_count,
                 'approved_tasks': proj.approved_task_count,
                 'rejected_tasks': proj.rejected_task_count,
-                'member_count': len(proj.member_ids),
-                'late_entries': late,
+                'member_count': members,
+                'expected_hours': f'{expected_hours:.2f}',
+                'project_hours': f'{project_hours:.2f}',
+                'performance': performance,
             })
+
+        total_hours = sum(
+            all_tasks.filtered(
+                lambda t: t.approval_status != 'rejected'
+            ).mapped('duration_hours'))
 
         return {
             'totalProjects': len(projects),
             'totalMembers': Member.search_count([]),
-            'totalHours': f'{sum(all_tasks.filtered(lambda t: t.approval_status != "rejected").mapped("duration_hours")):.2f}',
-            'totalLateEntries': total_late,
+            'totalHours': f'{total_hours:.2f}',
             'projects': projects_data,
+            'date_from': str(d_from),
+            'date_to': str(d_to),
+            'period': period,
         }
 
     # ----------------------------------------------------------------
@@ -1084,7 +1170,7 @@ class TaskManagementTask(models.Model):
                 ['', _('Status'), _('Progress'), _('Logged Hours'),
                  _('Pending'),
                  _('Approved'),
-                 _('Rejected'),
+                 _('Revision Requests'),
                  _('Assigned Tasks')])
             writer.writerow(
                 ['', proj['status'].replace('_', ' ').title(),
@@ -1223,7 +1309,7 @@ class TaskManagementTask(models.Model):
                         <div class="kpi-label">{_("Approved")}</div></td>
                     <td>
                         <div class="kpi-value" style="color:#d9534f">{proj.get("rejected_tasks", 0)}</div>
-                        <div class="kpi-label">{_("Rejected")}</div></td>
+                        <div class="kpi-label">{_("Revision Requests")}</div></td>
                     <td>
                         <div class="kpi-value" style="color:#17a2b8">{proj.get("assigned_tasks", 0)}</div>
                         <div class="kpi-label">{_("Assigned")}</div></td>
@@ -1302,9 +1388,9 @@ class TaskManagementTask(models.Model):
         return self._html_to_pdf(html, f'pm_dashboard_{today}.pdf')
 
     @api.model
-    def export_admin_dashboard_csv(self):
+    def export_admin_dashboard_csv(self, period='month', date_from=False, date_to=False):
         """Export Admin dashboard data as CSV (all projects)."""
-        data = self.get_admin_dashboard_data()
+        data = self.get_admin_dashboard_data(period, date_from, date_to)
         company = self.env.company.name
         today = fields.Date.context_today(self)
 
@@ -1316,6 +1402,8 @@ class TaskManagementTask(models.Model):
         writer.writerow([])
         writer.writerow([_('Company:'), company])
         writer.writerow([_('Report Date:'), str(today)])
+        writer.writerow([_('Period:'),
+                         f'{data["date_from"]} — {data["date_to"]}'])
         writer.writerow([])
 
         # -- Organization Summary --
@@ -1325,7 +1413,6 @@ class TaskManagementTask(models.Model):
         writer.writerow(['', _('Total Projects'), data['totalProjects']])
         writer.writerow(['', _('Total Members'), data['totalMembers']])
         writer.writerow(['', _('Total Logged Hours'), data['totalHours']])
-        writer.writerow(['', _('Total Late Entries'), data['totalLateEntries']])
         writer.writerow([])
 
         # -- All Projects --
@@ -1335,11 +1422,11 @@ class TaskManagementTask(models.Model):
             [_('No.'), _('Project'), _('Status'), _('Progress'),
              _('Tasks'), _('Pending'),
              _('Approved'),
-             _('Rejected'),
-             _('Members'), _('Late Entries')])
+             _('Revision Requests'),
+             _('Members'), _('Expected Hours'),
+             _('Project Hours'), _('Performance %')])
         total_tasks = 0
         total_pending = 0
-        total_late = 0
         for i, proj in enumerate(data.get('projects', []), 1):
             writer.writerow([
                 i,
@@ -1351,15 +1438,16 @@ class TaskManagementTask(models.Model):
                 proj.get('approved_tasks', 0),
                 proj.get('rejected_tasks', 0),
                 proj['member_count'],
-                proj['late_entries'],
+                proj['expected_hours'],
+                proj['project_hours'],
+                f'{proj["performance"]}%',
             ])
             total_tasks += proj['task_count']
             total_pending += proj['pending_tasks']
-            total_late += proj['late_entries']
         writer.writerow([])
         writer.writerow(
             ['', _('TOTAL'), '', '',
-             total_tasks, total_pending, '', total_late])
+             total_tasks, total_pending, '', '', '', '', '', ''])
         writer.writerow([])
 
         # -- Footer --
@@ -1384,6 +1472,16 @@ class TaskManagementTask(models.Model):
                 f'<img src="data:image/png;base64,{logo_b64}"'
                 f' style="height:50px;width:auto;"/>')
 
+        # Performance color helper
+        def perf_color(val):
+            if val >= 75:
+                return '#5cb85c'
+            elif val >= 50:
+                return '#0B3D91'
+            elif val >= 25:
+                return '#f0ad4e'
+            return '#d9534f'
+
         # Project rows
         project_rows = ''
         for proj in data.get('projects', []):
@@ -1392,6 +1490,7 @@ class TaskManagementTask(models.Model):
                 'waiting': '#f0ad4e', 'on_hold': '#f0ad4e',
                 'archived': '#999',
             }.get(proj['status'], '#0B3D91')
+            pc = perf_color(proj['performance'])
             project_rows += (
                 f'<tr><td>{proj["name"]}</td>'
                 f'<td style="color:{status_color};font-weight:bold;">'
@@ -1402,11 +1501,15 @@ class TaskManagementTask(models.Model):
                 f'<td>{proj.get("approved_tasks", 0)}</td>'
                 f'<td>{proj.get("rejected_tasks", 0)}</td>'
                 f'<td>{proj["member_count"]}</td>'
-                f'<td>{proj["late_entries"]}</td></tr>')
+                f'<td>{proj["expected_hours"]}</td>'
+                f'<td>{proj["project_hours"]}</td>'
+                f'<td style="color:{pc};font-weight:bold;">'
+                f'{proj["performance"]}%</td></tr>')
 
         is_rtl = self.env.lang and self.env.lang.startswith('ar')
         dir_attr = ' dir="rtl"' if is_rtl else ''
         th_align = 'right' if is_rtl else 'left'
+        period_label = f'{data.get("date_from", "")} — {data.get("date_to", "")}'
 
         html = f'''<!DOCTYPE html>
 <html{dir_attr}><head><meta charset="utf-8"/>
@@ -1420,7 +1523,7 @@ class TaskManagementTask(models.Model):
     .kpi-grid {{ width: 100%; border-collapse: separate; border-spacing: 12px 0;
                  margin: 15px 0 20px 0; }}
     .kpi-grid td {{ background: #E8EEF7; border: 1px solid #ddd; border-radius: 8px;
-                    padding: 12px 18px; text-align: center; width: 25%; }}
+                    padding: 12px 18px; text-align: center; width: 33%; }}
     .kpi-value {{ font-size: 24px; font-weight: bold; color: #0B3D91; }}
     .kpi-label {{ font-size: 10px; color: #666; text-transform: uppercase; }}
     h2 {{ color: #0B3D91; font-size: 16px; margin-top: 20px;
@@ -1437,7 +1540,7 @@ class TaskManagementTask(models.Model):
         <div class="header-logo">{logo_html}</div>
         <div>
             <h1>{_("Manager Dashboard Report")}</h1>
-            <p>{company.name} | {_("Generated:")} {today}</p>
+            <p>{company.name} | {_("Generated:")} {today} | {_("Period:")} {period_label}</p>
         </div>
     </div>
 
@@ -1451,9 +1554,6 @@ class TaskManagementTask(models.Model):
         <td>
             <div class="kpi-value">{data["totalHours"]}</div>
             <div class="kpi-label">{_("Total Hours")}</div></td>
-        <td>
-            <div class="kpi-value" style="color:#d9534f">{data["totalLateEntries"]}</div>
-            <div class="kpi-label">{_("Late Entries")}</div></td>
     </tr></table>
 
     <h2>{_("All Projects")}</h2>
@@ -1461,8 +1561,11 @@ class TaskManagementTask(models.Model):
         <th>{_("Project")}</th><th>{_("Status")}</th><th>{_("Progress")}</th>
         <th>{_("Tasks")}</th><th>{_("Pending")}</th>
         <th>{_("Approved")}</th>
-        <th>{_("Rejected")}</th>
-        <th>{_("Members")}</th><th>{_("Late")}</th>
+        <th>{_("Revision Requests")}</th>
+        <th>{_("Members")}</th>
+        <th>{_("Expected Hours")}</th>
+        <th>{_("Project Hours")}</th>
+        <th>{_("Performance %")}</th>
     </tr></thead><tbody>{project_rows}</tbody></table>
 
     <div class="footer">{_("Generated by")} {company.name} | {_("Manager Dashboard")} | {today}</div>
@@ -1471,18 +1574,18 @@ class TaskManagementTask(models.Model):
         return html
 
     @api.model
-    def export_admin_dashboard_png(self):
+    def export_admin_dashboard_png(self, period='month', date_from=False, date_to=False):
         """Export Admin dashboard as PNG image."""
-        data = self.get_admin_dashboard_data()
+        data = self.get_admin_dashboard_data(period, date_from, date_to)
         company = self.env.company
         today = fields.Date.context_today(self)
         html = self._build_admin_dashboard_html(data, company, today)
         return self._html_to_png(html, f'admin_dashboard_{today}.png')
 
     @api.model
-    def export_admin_dashboard_pdf(self):
+    def export_admin_dashboard_pdf(self, period='month', date_from=False, date_to=False):
         """Export Admin dashboard as PDF."""
-        data = self.get_admin_dashboard_data()
+        data = self.get_admin_dashboard_data(period, date_from, date_to)
         company = self.env.company
         today = fields.Date.context_today(self)
         html = self._build_admin_dashboard_html(data, company, today)
@@ -1553,6 +1656,26 @@ class TaskManagementTask(models.Model):
                 # Admin sees all members only
                 members = Member.search(member_domain)
 
+        # --- Compute period target for performance % ---
+        ICP = self.env['ir.config_parameter'].sudo()
+        daily_target = float(ICP.get_param(
+            'task_project_management.daily_hours_average', '8.0'))
+        weekly_target = float(ICP.get_param(
+            'task_project_management.weekly_hours_average', '40.0'))
+        off_days = int(ICP.get_param(
+            'task_project_management.monthly_off_days', '0'))
+
+        if period == 'today':
+            period_target = daily_target
+        elif period == 'week':
+            period_target = weekly_target
+        elif period == 'month':
+            days_in_month = monthrange(today.year, today.month)[1]
+            period_target = daily_target * max(days_in_month - off_days, 0)
+        else:  # custom
+            num_days = (d_to - d_from).days + 1
+            period_target = daily_target * num_days
+
         # --- Build per-member stats ---
         members_data = []
         all_tasks = self.sudo().search([
@@ -1569,19 +1692,24 @@ class TaskManagementTask(models.Model):
                 lambda t: t.approval_status == 'rejected'))
             pending = len(tasks.filtered(
                 lambda t: t.approval_status == 'pending'))
-            late = len(tasks.filtered(lambda t: t.is_late_entry))
+            performance = round(
+                (total_hours / period_target * 100) if period_target else 0, 1)
 
             members_data.append({
                 'id': m.id,
                 'name': m.name,
+                'target_hours': f'{period_target:.2f}',
                 'total_hours': f'{total_hours:.2f}',
                 'approved_hours': f'{approved_hours:.2f}',
                 'total_tasks': len(tasks),
                 'approved': len(approved_tasks),
                 'rejected': rejected,
                 'pending': pending,
-                'delayed': late,
+                'performance': performance,
             })
+
+        # Sort by total hours descending
+        members_data.sort(key=lambda m: float(m['total_hours']), reverse=True)
 
         return {
             'members': members_data,
@@ -1608,29 +1736,30 @@ class TaskManagementTask(models.Model):
         writer.writerow([])
 
         writer.writerow([
-            _('No.'), _('Member Name'), _('Total Hours'),
-            _('Approved Hours'), _('Total Tasks'), _('Approved'),
-            _('Rejected'), _('Pending'), _('Delayed Entries'),
+            _('No.'), _('Member Name'), _('Target Hours'),
+            _('Total Hours'), _('Approved Hours'), _('Total Tasks'),
+            _('Approved'), _('Revision Requests'), _('Pending'),
+            _('Performance %'),
         ])
-        t_hours = t_ahours = t_tasks = t_app = t_rej = t_pend = t_late = 0
+        t_target = t_hours = t_ahours = t_tasks = t_app = t_rej = t_pend = 0
         for i, m in enumerate(data.get('members', []), 1):
             writer.writerow([
-                i, m['name'], m['total_hours'], m['approved_hours'],
-                m['total_tasks'], m['approved'], m['rejected'],
-                m['pending'], m['delayed'],
+                i, m['name'], m['target_hours'], m['total_hours'],
+                m['approved_hours'], m['total_tasks'], m['approved'],
+                m['rejected'], m['pending'], f"{m['performance']}%",
             ])
+            t_target += float(m['target_hours'])
             t_hours += float(m['total_hours'])
             t_ahours += float(m['approved_hours'])
             t_tasks += m['total_tasks']
             t_app += m['approved']
             t_rej += m['rejected']
             t_pend += m['pending']
-            t_late += m['delayed']
 
         writer.writerow([])
         writer.writerow([
-            '', _('TOTAL'), f'{t_hours:.2f}', f'{t_ahours:.2f}',
-            t_tasks, t_app, t_rej, t_pend, t_late,
+            '', _('TOTAL'), f'{t_target:.2f}', f'{t_hours:.2f}',
+            f'{t_ahours:.2f}', t_tasks, t_app, t_rej, t_pend, '',
         ])
         writer.writerow([])
         writer.writerow([_('END OF REPORT')])
@@ -1644,40 +1773,49 @@ class TaskManagementTask(models.Model):
     @api.model
     def _build_overall_performance_html(self, data, company, today):
         """Build HTML for overall performance export (shared by PNG/PDF)."""
-        logo_html = ''
+        logo_cell = ''
         if company.logo:
             logo_b64 = (company.logo.decode()
                         if isinstance(company.logo, bytes)
                         else company.logo)
-            logo_html = (
+            logo_cell = (
+                f'<td class="logo-cell">'
                 f'<img src="data:image/png;base64,{logo_b64}"'
-                f' style="height:50px;width:auto;"/>')
+                f' class="logo"/></td>')
 
         member_rows = ''
-        t_hours = t_ahours = t_tasks = t_app = t_rej = t_pend = t_late = 0
+        t_target = t_hours = t_ahours = t_tasks = t_app = t_rej = t_pend = 0
         for i, m in enumerate(data.get('members', []), 1):
+            perf = m.get('performance', 0)
+            perf_color = (
+                '#5cb85c' if perf >= 75 else
+                '#0B3D91' if perf >= 50 else
+                '#ffc107' if perf >= 25 else
+                '#d9534f')
             member_rows += (
                 f'<tr><td>{i}</td><td>{m["name"]}</td>'
+                f'<td>{m["target_hours"]}</td>'
                 f'<td>{m["total_hours"]}</td><td>{m["approved_hours"]}</td>'
                 f'<td>{m["total_tasks"]}</td>'
                 f'<td style="color:#5cb85c">{m["approved"]}</td>'
                 f'<td style="color:#d9534f">{m["rejected"]}</td>'
                 f'<td style="color:#f0ad4e">{m["pending"]}</td>'
-                f'<td style="color:#d9534f">{m["delayed"]}</td></tr>')
+                f'<td style="color:{perf_color};font-weight:bold">{perf}%</td></tr>')
+            t_target += float(m['target_hours'])
             t_hours += float(m['total_hours'])
             t_ahours += float(m['approved_hours'])
             t_tasks += m['total_tasks']
             t_app += m['approved']
             t_rej += m['rejected']
             t_pend += m['pending']
-            t_late += m['delayed']
 
         totals_row = (
             f'<tr style="font-weight:bold;background:#E8EEF7">'
             f'<td></td><td>{_("TOTAL")}</td>'
+            f'<td>{t_target:.2f}</td>'
             f'<td>{t_hours:.2f}</td><td>{t_ahours:.2f}</td>'
             f'<td>{t_tasks}</td><td>{t_app}</td>'
-            f'<td>{t_rej}</td><td>{t_pend}</td><td>{t_late}</td></tr>')
+            f'<td>{t_rej}</td><td>{t_pend}</td><td></td></tr>')
 
         is_rtl = self.env.lang and self.env.lang.startswith('ar')
         dir_attr = ' dir="rtl"' if is_rtl else ''
@@ -1687,11 +1825,13 @@ class TaskManagementTask(models.Model):
 <html{dir_attr}><head><meta charset="utf-8"/>
 <style>
     body {{ font-family: Arial, sans-serif; margin: 20px; background: #fff; }}
-    .header {{ border-bottom: 3px solid #0B3D91; padding-bottom: 15px;
-               margin-bottom: 20px; overflow: hidden; }}
-    .header-logo {{ float: {"right" if is_rtl else "left"}; margin-{"left" if is_rtl else "right"}: 15px; }}
-    .header h1 {{ color: #0B3D91; margin: 0; font-size: 22px; }}
-    .header p {{ color: #666; margin: 3px 0 0 0; font-size: 12px; }}
+    .header {{ border-bottom: 3px solid #0B3D91; padding-bottom: 15px; margin-bottom: 20px; }}
+    .header-table {{ width: 100%; border-collapse: separate; border-spacing: 15px 0; }}
+    .header-table td {{ vertical-align: middle; padding: 0; }}
+    .header-table td.logo-cell {{ width: 70px; text-align: center; white-space: nowrap; }}
+    .logo {{ height: 60px; width: auto; }}
+    .header-text h1 {{ color: #0B3D91; margin: 0; font-size: 22px; }}
+    .header-text p {{ color: #666; margin: 3px 0 0 0; font-size: 12px; line-height: 1.4; }}
     h2 {{ color: #0B3D91; font-size: 16px; margin-top: 20px;
           border-bottom: 2px solid #0B3D91; padding-bottom: 5px; }}
     table.data {{ width: 100%; border-collapse: collapse; margin-top: 8px; }}
@@ -1703,19 +1843,22 @@ class TaskManagementTask(models.Model):
                color: #999; font-size: 10px; text-align: center; }}
 </style></head><body>
     <div class="header">
-        <div class="header-logo">{logo_html}</div>
-        <div>
-            <h1>{_("Overall Performance Report")}</h1>
-            <p>{company.name} | {_("Period:")} {data["date_from"]} — {data["date_to"]} | {_("Generated:")} {today}</p>
-        </div>
+        <table class="header-table"><tr>
+            {logo_cell}
+            <td class="header-text">
+                <h1>{_("Overall Performance Report")}</h1>
+                <p>{company.name} | {_("Period:")} {data["date_from"]} — {data["date_to"]}<br/>{_("Generated:")} {today}</p>
+            </td>
+        </tr></table>
     </div>
 
     <h2>{_("Member Performance")}</h2>
     <table class="data"><thead><tr>
-        <th>#</th><th>{_("Member Name")}</th><th>{_("Total Hours")}</th>
-        <th>{_("Approved Hours")}</th><th>{_("Total Tasks")}</th>
-        <th>{_("Approved")}</th><th>{_("Rejected")}</th>
-        <th>{_("Pending")}</th><th>{_("Delayed Entries")}</th>
+        <th>#</th><th>{_("Member Name")}</th><th>{_("Target Hours")}</th>
+        <th>{_("Total Hours")}</th><th>{_("Approved Hours")}</th>
+        <th>{_("Total Tasks")}</th><th>{_("Approved")}</th>
+        <th>{_("Revision Requests")}</th><th>{_("Pending")}</th>
+        <th>{_("Performance %")}</th>
     </tr></thead><tbody>{member_rows}{totals_row}</tbody></table>
 
     <div class="footer">{_("Generated by")} {company.name} | {_("Overall Performance")} | {today}</div>

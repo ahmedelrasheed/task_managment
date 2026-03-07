@@ -82,7 +82,8 @@
                                 <tree>
                                     <field name="date"/>
                                     <field name="project_id"/>
-                                    <field name="description"/>
+                                    <field name="description" column_invisible="1"/>
+                                    <field name="description_short"/>
                                     <field name="duration_hours" widget="float_time"/>
                                     <field name="task_type" widget="badge"
                                            decoration-info="task_type == 'assigned'"
